@@ -17,19 +17,24 @@ import deepl
 
 # --- Global App Settings ---
 app_settings = {'native_language': 'English', 'learning_language': 'Swedish', 'keep_tts_cache': True, 'ui_language': 'en', 'deepl_api_key': ''}
-lang_codes = {"Arabic": "ar", "Chinese (Mandarin)": "zh-CN", "Dutch": "nl", "English": "en", "Finnish": "fi", "French": "fr", "German": "de", "Hungarian": "hu", "Italian": "it", "Japanese": "ja", "Norwegian": "no", "Polish": "pl", "Portuguese": "pt", "Russian": "ru", "Spanish": "es", "Swedish": "sv", "Turkish": "tr"}
+lang_codes = {"Arabic": "ar", "Chinese (Mandarin)": "zh-CN", "Dutch": "nl", "English": "en", "Esperanto": "eo", "Finnish": "fi", "French": "fr", "German": "de", "Hungarian": "hu", "Italian": "it", "Japanese": "ja", "Norwegian": "no", "Polish": "pl", "Portuguese": "pt", "Russian": "ru", "Spanish": "es", "Swedish": "sv", "Turkish": "tr"}
+tts_supported_langs = {"Arabic", "Chinese (Mandarin)", "Dutch", "English", "Finnish", "French", "German", "Hungarian", "Italian", "Japanese", "Norwegian", "Polish", "Portuguese", "Russian", "Spanish", "Swedish", "Turkish"}
 deepl_lang_codes = {"Arabic": "AR", "Chinese (Simplified)": "ZH", "Dutch": "NL", "English (American)": "EN-US", "English (British)": "EN-GB", "Finnish": "FI", "French": "FR", "German": "DE", "Hungarian": "HU", "Italian": "IT", "Japanese": "JA", "Norwegian": "NB", "Polish": "PL", "Portuguese (Brazilian)": "PT-BR", "Russian": "RU", "Spanish": "ES", "Swedish": "SV", "Turkish": "TR"}
 
 def load_settings():
     global app_settings
     if os.path.exists('settings.json'):
         try:
-            with open('settings.json', 'r') as f: app_settings.update(json.load(f))
-        except (IOError, json.JSONDecodeError): save_settings()
-    else: save_settings()
+            with open('settings.json', 'r') as f:
+                app_settings.update(json.load(f))
+        except (IOError, json.JSONDecodeError):
+            save_settings()
+    else:
+        save_settings()
 
 def save_settings():
-    with open('settings.json', 'w') as f: json.dump(app_settings, f, indent=4)
+    with open('settings.json', 'w') as f:
+        json.dump(app_settings, f, indent=4)
 
 # --- Dialogs ---
 class LanguageSelectDialog(wx.Dialog):
@@ -44,14 +49,17 @@ class LanguageSelectDialog(wx.Dialog):
         main_sizer.Add(self.CreateStdDialogButtonSizer(wx.OK), 0, wx.ALIGN_CENTER|wx.ALL, 10)
         self.SetSizerAndFit(main_sizer)
         self.Center()
-    def get_lang_code(self): return ["en", "ru", "hu"][self.lang_choice.GetSelection()]
+    def get_lang_code(self):
+        return ["en", "ru", "hu"][self.lang_choice.GetSelection()]
 
 class WordDialog(wx.Dialog):
     def __init__(self, parent, title, native="", learned="", notes=""):
         super().__init__(parent, title=title, size=(400, 220))
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         grid_sizer = wx.FlexGridSizer(3, 2, 10, 10)
-        self.native_text, self.learned_text, self.notes_text = wx.TextCtrl(self, value=native), wx.TextCtrl(self, value=learned), wx.TextCtrl(self, value=notes)
+        self.native_text = wx.TextCtrl(self, value=native)
+        self.learned_text = wx.TextCtrl(self, value=learned)
+        self.notes_text = wx.TextCtrl(self, value=notes)
         grid_sizer.Add(wx.StaticText(self, label=_("&Native Word:")), 0, wx.ALIGN_CENTER_VERTICAL)
         grid_sizer.Add(self.native_text, 1, wx.EXPAND)
         grid_sizer.Add(wx.StaticText(self, label=_("&Learned Word:")), 0, wx.ALIGN_CENTER_VERTICAL)
@@ -64,7 +72,8 @@ class WordDialog(wx.Dialog):
         main_sizer.Add(button_sizer, 0, wx.ALIGN_CENTER | wx.BOTTOM, 10)
         self.SetSizer(main_sizer)
         self.Center()
-    def get_values(self): return {"native": self.native_text.GetValue(), "learned": self.learned_text.GetValue(), "notes": self.notes_text.GetValue()}
+    def get_values(self):
+        return {"native": self.native_text.GetValue(), "learned": self.learned_text.GetValue(), "notes": self.notes_text.GetValue()}
 
 class SettingsDialog(wx.Dialog):
     def __init__(self, parent):
@@ -134,8 +143,7 @@ class DatabasePanel(wx.Panel):
         super().__init__(parent)
         self.dictionaries, self.current_dict_id = {}, None
         main_sizer, control_sizer = wx.BoxSizer(wx.VERTICAL), wx.BoxSizer(wx.HORIZONTAL)
-        self.dict_choice = wx.Choice(self)
-        self.delete_dict_button = wx.Button(self, label=_("Delete This Dictionary"))
+        self.dict_choice, self.delete_dict_button = wx.Choice(self), wx.Button(self, label=_("Delete This Dictionary"))
         self.Bind(wx.EVT_CHOICE, self.on_dict_selected, self.dict_choice)
         self.Bind(wx.EVT_BUTTON, self.on_delete_dictionary, self.delete_dict_button)
         control_sizer.Add(wx.StaticText(self, label=_("Dictionary:")), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
@@ -152,7 +160,9 @@ class DatabasePanel(wx.Panel):
         button_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.add_button, self.edit_button, self.delete_button = wx.Button(self, label=_("Add Word...")), wx.Button(self, label=_("Edit Word...")), wx.Button(self, label=_("Delete Word"))
         self.speak_button = wx.Button(self, label=_("Speak Learned Word"))
-        self.edit_button.Disable(), self.delete_button.Disable(), self.speak_button.Disable()
+        self.edit_button.Disable()
+        self.delete_button.Disable()
+        self.speak_button.Disable()
         self.Bind(wx.EVT_BUTTON, self.on_add_word, self.add_button)
         self.Bind(wx.EVT_BUTTON, self.on_edit_word, self.edit_button)
         self.Bind(wx.EVT_BUTTON, self.on_delete_word, self.delete_button)
@@ -165,10 +175,13 @@ class DatabasePanel(wx.Panel):
         main_sizer.Add(button_sizer, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
         self.SetSizer(main_sizer)
         self.populate_dictionaries()
-        self.dict_choice.SetFocus() # ACCESSIBILITY FIX
+        self.dict_choice.SetFocus()
     def populate_dictionaries(self):
-        self.dict_choice.Clear(), self.word_list.DeleteAllItems()
-        self.edit_button.Disable(), self.delete_button.Disable(), self.speak_button.Disable()
+        self.dict_choice.Clear()
+        self.word_list.DeleteAllItems()
+        self.edit_button.Disable()
+        self.delete_button.Disable()
+        self.speak_button.Disable()
         db_dicts = database.get_dictionaries()
         self.dictionaries = {name: id for id, name in db_dicts}
         if db_dicts:
@@ -181,7 +194,10 @@ class DatabasePanel(wx.Panel):
             self.add_button.Disable()
             self.delete_dict_button.Disable()
     def populate_words(self):
-        self.word_list.DeleteAllItems(), self.edit_button.Disable(), self.delete_button.Disable(), self.speak_button.Disable()
+        self.word_list.DeleteAllItems()
+        self.edit_button.Disable()
+        self.delete_button.Disable()
+        self.speak_button.Disable()
         if self.current_dict_id is not None:
             self.add_button.Enable()
             for word_id, native, learned, notes in database.get_words(self.current_dict_id):
@@ -197,32 +213,43 @@ class DatabasePanel(wx.Panel):
     def on_delete_dictionary(self, event):
         if not self.current_dict_id: return
         dict_name = self.dict_choice.GetStringSelection()
-        with wx.MessageDialog(self, _("Are you sure you want to permanently delete the entire dictionary '{name}' and all the words in it?").format(name=dict_name), _("Confirm Delete Dictionary"), wx.YES_NO | wx.NO_DEFAULT | wx.ICON_WARNING) as dlg:
+        msg = _("Are you sure you want to permanently delete the entire dictionary '{name}' and all the words in it?").format(name=dict_name)
+        with wx.MessageDialog(self, msg, _("Confirm Delete Dictionary"), wx.YES_NO | wx.NO_DEFAULT | wx.ICON_WARNING) as dlg:
             if dlg.ShowModal() == wx.ID_YES:
                 database.delete_dictionary(self.current_dict_id)
                 self.populate_dictionaries()
     def on_word_selected(self, event):
-        self.edit_button.Enable(), self.delete_button.Enable(), self.speak_button.Enable()
+        self.edit_button.Enable()
+        self.delete_button.Enable()
+        # --- FIX: Only enable speak button if language is supported ---
+        if app_settings['learning_language'] in tts_supported_langs:
+            self.speak_button.Enable()
     def on_word_deselected(self, event):
         if self.word_list.GetSelectedItemCount() == 0:
-            self.edit_button.Disable(), self.delete_button.Disable(), self.speak_button.Disable()
+            self.edit_button.Disable()
+            self.delete_button.Disable()
+            self.speak_button.Disable()
     def on_add_word(self, event):
         self.GetParent().add_word_to_db()
     def on_edit_word(self, event):
         if (idx := self.word_list.GetFirstSelected()) == -1: return
         word_id = self.word_list.GetItemData(idx)
-        native, learned, notes = self.word_list.GetItemText(idx), self.word_list.GetItem(idx, 1).GetText(), self.word_list.GetItem(idx, 2).GetText()
+        native = self.word_list.GetItemText(idx)
+        learned = self.word_list.GetItem(idx, 1).GetText()
+        notes = self.word_list.GetItem(idx, 2).GetText()
         self.GetParent().add_word_to_db(word_id=word_id, native=native, learned=learned, notes=notes)
     def on_delete_word(self, event):
         if (idx := self.word_list.GetFirstSelected()) == -1: return
-        word_id, native_word = self.word_list.GetItemData(idx), self.word_list.GetItemText(idx)
+        word_id = self.word_list.GetItemData(idx)
+        native_word = self.word_list.GetItemText(idx)
         with wx.MessageDialog(self, _("Are you sure you want to delete the word '{word}'?").format(word=native_word), _("Confirm Delete"), wx.YES_NO | wx.NO_DEFAULT | wx.ICON_WARNING) as dlg:
             if dlg.ShowModal() == wx.ID_YES:
                 database.delete_word(word_id)
                 self.populate_words()
     def on_speak(self, event):
         if (idx := self.word_list.GetFirstSelected()) == -1: return
-        learned_word, lang_code = self.word_list.GetItem(idx, 1).GetText(), lang_codes.get(app_settings['learning_language'])
+        learned_word = self.word_list.GetItem(idx, 1).GetText()
+        lang_code = lang_codes.get(app_settings['learning_language'])
         if learned_word and lang_code:
             threading.Thread(target=tts_handler.speak, args=(learned_word, lang_code, app_settings['keep_tts_cache']), daemon=True).start()
 
@@ -242,13 +269,14 @@ class ReviewPanel(wx.Panel):
         main_sizer.Add(sizer, 1, wx.EXPAND | wx.ALL, 20)
         self.SetSizer(main_sizer)
         self.start_review_session()
-        self.show_answer_button.SetFocus() # ACCESSIBILITY FIX
+        self.show_answer_button.SetFocus()
     def start_review_session(self):
         self.due_cards = database.get_due_cards()
         if not self.due_cards:
             wx.MessageBox(_("No words are due for review today. Great job!"), _("Review Complete"), wx.OK | wx.ICON_INFORMATION)
             wx.CallAfter(self.GetParent().show_database_panel)
-        else: self.load_next_card()
+        else:
+            self.load_next_card()
     def load_next_card(self):
         if not self.due_cards:
             wx.MessageBox(_("All words for this session have been reviewed!"), _("Review Complete"), wx.OK | wx.ICON_INFORMATION)
@@ -259,20 +287,19 @@ class ReviewPanel(wx.Panel):
         self.question_text.SetLabel(native)
         self.card_count_text.SetLabel(_("{count} words remaining.").format(count=len(self.due_cards) + 1))
         self.Layout()
-        lang_code = lang_codes.get(app_settings['native_language'])
-        if native and lang_code:
+        if app_settings['native_language'] in tts_supported_langs and (lang_code := lang_codes.get(app_settings['native_language'])):
             threading.Thread(target=tts_handler.speak, args=(native, lang_code, app_settings['keep_tts_cache']), daemon=True).start()
     def on_show_answer(self, event):
         word_id, native, learned, easiness, interval, _ = self.current_card
         wx.MessageBox(_("The answer is:\n\n{answer}").format(answer=learned), _("Answer"), wx.OK | wx.ICON_INFORMATION)
-        lang_code = lang_codes.get(app_settings['learning_language'])
-        if learned and lang_code:
+        if app_settings['learning_language'] in tts_supported_langs and (lang_code := lang_codes.get(app_settings['learning_language'])):
             threading.Thread(target=tts_handler.speak, args=(learned, lang_code, app_settings['keep_tts_cache']), daemon=True).start()
         choices = [_("Forgot (review in 1 day)"), _("Hard"), _("Good"), _("Easy")]
         with wx.SingleChoiceDialog(self, _("How well did you know it?"), _("Grade Yourself"), choices) as grade_dlg:
             if grade_dlg.ShowModal() == wx.ID_OK:
                 quality = [0, 3, 4, 5][grade_dlg.GetSelection()]
-                if quality < 3: interval = 1
+                if quality < 3:
+                    interval = 1
                 else:
                     easiness = max(1.3, easiness + 0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02))
                     if quality == 3: interval = round(interval * 1.2)
@@ -311,7 +338,7 @@ class QuizPanel(wx.Panel):
         main_sizer.Add(quiz_sizer, 0, wx.EXPAND | wx.ALL, 20)
         self.SetSizerAndFit(main_sizer)
         self.start_session()
-        self.answer_input.SetFocus() # ACCESSIBILITY FIX
+        self.answer_input.SetFocus()
     def start_session(self):
         self.session_words = database.get_random_words(20)
         if not self.session_words:
@@ -321,36 +348,48 @@ class QuizPanel(wx.Panel):
         self.load_next_word()
     def load_next_word(self):
         word_list = self.session_words if self.state == 'quiz' else self.incorrect_words
-        if self.current_q_num >= len(word_list): self.end_phase(); return
+        if self.current_q_num >= len(word_list):
+            self.end_phase()
+            return
         native, learned = word_list[self.current_q_num]
-        is_native_question = random.choice([True,False])
-        self.current_question = native if is_native_question else learned
-        self.current_answer = learned if is_native_question else native
-        self.question_lang_code = lang_codes.get(app_settings['native_language']) if is_native_question else lang_codes.get(app_settings['learning_language'])
+        self.question_is_native = random.choice([True,False])
+        self.current_question = native if self.question_is_native else learned
+        self.current_answer = learned if self.question_is_native else native
         self.question_text.SetLabel(self.current_question)
         self.answer_input.SetValue("")
         self.answer_input.SetFocus()
         self.GetParent().SetStatusText(_("Question {current} of {total}").format(current=self.current_q_num + 1, total=len(word_list)))
         self.on_speak(None)
     def on_check_answer(self, event):
-        user_answer, correct_answer = self.answer_input.GetValue().strip().lower(), self.current_answer.strip().lower()
-        if user_answer == correct_answer: wx.MessageBox(_("Correct!"), _("Result"), wx.OK | wx.ICON_INFORMATION)
+        user_answer = self.answer_input.GetValue().strip().lower()
+        correct_answer = self.current_answer.strip().lower()
+        if user_answer == correct_answer:
+            wx.MessageBox(_("Correct!"), _("Result"), wx.OK | wx.ICON_INFORMATION)
         else:
             wx.MessageBox(_("Incorrect.\nThe correct answer is: {answer}").format(answer=self.current_answer), _("Result"), wx.OK | wx.ICON_ERROR)
-            if self.state == 'quiz': self.incorrect_words.append(self.session_words[self.current_q_num])
+            if self.state == 'quiz':
+                self.incorrect_words.append(self.session_words[self.current_q_num])
         self.current_q_num += 1
         self.load_next_word()
     def end_phase(self):
         if self.state == 'quiz':
-            if not self.incorrect_words: wx.MessageBox(_("Quiz complete! You got all 20 words correct!"), _("Perfect!"), wx.OK | wx.ICON_INFORMATION), wx.CallAfter(self.GetParent().show_database_panel); return
+            if not self.incorrect_words:
+                wx.MessageBox(_("Quiz complete! You got all 20 words correct!"), _("Perfect!"), wx.OK | wx.ICON_INFORMATION)
+                wx.CallAfter(self.GetParent().show_database_panel)
+                return
             wx.MessageBox(_("Initial quiz complete. Now let's retry the {count} words you missed.").format(count=len(self.incorrect_words)), _("Retry Phase"), wx.OK | wx.ICON_INFORMATION)
             self.state = 'retry'
             self.current_q_num = 0
             self.quiz_box.SetLabel(_("Quiz - Retrying Incorrect Words"))
             self.load_next_word()
-        else: wx.MessageBox(_("Retry phase complete! Well done."), _("Quiz Finished"), wx.OK | wx.ICON_INFORMATION), wx.CallAfter(self.GetParent().show_database_panel)
+        else:
+            wx.MessageBox(_("Retry phase complete! Well done."), _("Quiz Finished"), wx.OK | wx.ICON_INFORMATION)
+            wx.CallAfter(self.GetParent().show_database_panel)
     def on_speak(self, event):
-        if self.current_question and self.question_lang_code: threading.Thread(target=tts_handler.speak, args=(self.current_question, self.question_lang_code, app_settings['keep_tts_cache']), daemon=True).start()
+        lang_to_speak = app_settings['native_language'] if self.question_is_native else app_settings['learning_language']
+        if self.current_question and lang_to_speak in tts_supported_langs:
+            lang_code = lang_codes.get(lang_to_speak)
+            threading.Thread(target=tts_handler.speak, args=(self.current_question, lang_code, app_settings['keep_tts_cache']), daemon=True).start()
 
 class FlashcardPanel(wx.Panel):
     def __init__(self, parent):
@@ -370,7 +409,7 @@ class FlashcardPanel(wx.Panel):
         main_sizer.Add(sizer, 1, wx.EXPAND | wx.ALL, 20)
         self.SetSizer(main_sizer)
         self.start_session()
-        self.show_answer_button.SetFocus() # ACCESSIBILITY FIX
+        self.show_answer_button.SetFocus()
     def start_session(self):
         self.session_words = database.get_random_words(15)
         if not self.session_words:
@@ -389,12 +428,13 @@ class FlashcardPanel(wx.Panel):
         is_native_question = random.choice([True,False])
         question = native if is_native_question else learned
         answer = learned if is_native_question else native
-        lang_code = lang_codes.get(app_settings['native_language']) if is_native_question else lang_codes.get(app_settings['learning_language'])
+        lang_to_speak = app_settings['native_language'] if is_native_question else app_settings['learning_language']
         self.word_text.SetLabel(question)
         self.current_answer = answer
         self.card_count_text.SetLabel(_("Card {current} of {total}").format(current=self.current_index + 1, total=len(self.session_words)))
         self.Layout()
-        if question and lang_code:
+        if question and lang_to_speak in tts_supported_langs:
+            lang_code = lang_codes.get(lang_to_speak)
             threading.Thread(target=tts_handler.speak, args=(question, lang_code, app_settings['keep_tts_cache']), daemon=True).start()
     def on_show_answer(self, event):
         wx.MessageBox(_("The answer is:\n\n{answer}").format(answer=self.current_answer), _("Answer"), wx.OK | wx.ICON_INFORMATION)
@@ -438,15 +478,14 @@ class OnlineDictPanel(wx.Panel):
         main_sizer.Add(self.results_text, 1, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
         main_sizer.Add(button_sizer, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
         self.SetSizer(main_sizer)
-        self.search_input.SetFocus() # ACCESSIBILITY FIX
+        self.search_input.SetFocus()
     def on_search(self, event):
         word, source_name_t, target_name_t = self.search_input.GetValue().strip(), self.source_lang_choice.GetStringSelection(), self.target_lang_choice.GetStringSelection()
         source_name, target_name = self.english_lang_map[source_name_t], self.english_lang_map[target_name_t]
         if not word: return
         self.search_button.Disable(), self.add_to_db_button.Disable(), self.speak_button.Disable()
         self.last_search_term, self.last_best_translation = None, None
-        self.results_text.SetValue(_("Translating '{word}' from {source} to {target}...").format(word=word, source=source_name_t, target=target_name_t))
-        self.GetParent().SetStatusText(_("Translating {word}...").format(word=word))
+        self.results_text.SetValue(_("Translating '{word}' from {source} to {target}...").format(word=word, source=source_name_t, target=target_name_t)), self.GetParent().SetStatusText(_("Translating {word}...").format(word=word))
         threading.Thread(target=self._get_advanced_translation, args=(word, source_name, target_name), daemon=True).start()
     def _get_advanced_translation(self, word, source_name, target_name):
         try:
@@ -471,7 +510,7 @@ class OnlineDictPanel(wx.Panel):
         if original_word and best_translation:
             self.last_search_term, self.last_best_translation = original_word, best_translation
             self.add_to_db_button.Enable()
-            self.speak_button.Enable()
+            if self.english_lang_map[self.target_lang_choice.GetStringSelection()] in tts_supported_langs: self.speak_button.Enable()
     def on_add_to_db(self, event):
         if self.last_search_term and self.last_best_translation:
             source_lang = self.english_lang_map[self.source_lang_choice.GetStringSelection()]
@@ -480,137 +519,63 @@ class OnlineDictPanel(wx.Panel):
             self.GetParent().add_word_to_db(native=native, learned=learned)
     def on_speak(self, event):
         target_lang = self.english_lang_map[self.target_lang_choice.GetStringSelection()]
-        lang_code = lang_codes.get(target_lang)
-        if self.last_best_translation and lang_code:
+        if self.last_best_translation and (lang_code := lang_codes.get(target_lang)):
             threading.Thread(target=tts_handler.speak, args=(self.last_best_translation, lang_code, app_settings['keep_tts_cache']), daemon=True).start()
 
 class PronunciationPanel(wx.Panel):
     def __init__(self, parent):
-        super().__init__(parent)
-        main_sizer = wx.BoxSizer(wx.VERTICAL)
-        practice_box = wx.StaticBox(self, label=_("Practice Pronunciation in {lang}").format(lang=app_settings['learning_language']))
-        sizer = wx.StaticBoxSizer(practice_box, wx.VERTICAL)
-        self.text_input = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER)
-        self.text_input.SetHint(_("Type or paste any text here to practice..."))
-        self.speak_button, self.close_button = wx.Button(self, label=_("Speak Text")), wx.Button(self, label=_("Close"))
-        self.Bind(wx.EVT_BUTTON, self.on_speak, self.speak_button)
-        self.Bind(wx.EVT_BUTTON, lambda e: self.GetParent().show_database_panel(), self.close_button)
-        sizer.Add(self.text_input, 1, wx.EXPAND | wx.ALL, 10)
-        sizer.Add(self.speak_button, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
-        sizer.Add(self.close_button, 0, wx.ALIGN_CENTER | wx.BOTTOM, 10)
-        main_sizer.Add(sizer, 1, wx.EXPAND | wx.ALL, 20)
-        self.SetSizer(main_sizer)
-        self.text_input.SetFocus() # ACCESSIBILITY FIX
-
+        super().__init__(parent); main_sizer = wx.BoxSizer(wx.VERTICAL); practice_box = wx.StaticBox(self, label=_("Practice Pronunciation in {lang}").format(lang=app_settings['learning_language'])); sizer = wx.StaticBoxSizer(practice_box, wx.VERTICAL); self.text_input = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER); self.text_input.SetHint(_("Type or paste any text here to practice...")); self.speak_button, self.close_button = wx.Button(self, label=_("Speak Text")), wx.Button(self, label=_("Close")); self.Bind(wx.EVT_BUTTON, self.on_speak, self.speak_button), self.Bind(wx.EVT_BUTTON, lambda e: self.GetParent().show_database_panel(), self.close_button); sizer.Add(self.text_input, 1, wx.EXPAND | wx.ALL, 10), sizer.Add(self.speak_button, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10), sizer.Add(self.close_button, 0, wx.ALIGN_CENTER | wx.BOTTOM, 10); main_sizer.Add(sizer, 1, wx.EXPAND | wx.ALL, 20), self.SetSizer(main_sizer), self.text_input.SetFocus()
     def on_speak(self, event):
-        text, lang_code = self.text_input.GetValue().strip(), lang_codes.get(app_settings['learning_language'])
-        if text and lang_code:
-            threading.Thread(target=tts_handler.speak, args=(text, lang_code, app_settings['keep_tts_cache']), daemon=True).start()
-        elif not text: wx.MessageBox(_("Please enter some text to speak."), _("Input Required"), wx.OK | wx.ICON_INFORMATION)
+        text, lang_name = self.text_input.GetValue().strip(), app_settings['learning_language']
+        if text and lang_name:
+            if lang_name not in tts_supported_langs:
+                wx.MessageBox(_("Sorry, Text-to-Speech is not supported for this language."), "TTS Not Supported", wx.OK | wx.ICON_WARNING)
+                return
+            if lang_code := lang_codes.get(lang_name):
+                threading.Thread(target=tts_handler.speak, args=(text, lang_code, app_settings['keep_tts_cache']), daemon=True).start()
+        elif not text:
+            wx.MessageBox(_("Please enter some text to speak."), _("Input Required"), wx.OK | wx.ICON_INFORMATION)
 
 class DeepLPanel(wx.Panel):
     def __init__(self, parent):
-        super().__init__(parent)
-        self.translator = None
+        super().__init__(parent); self.translator = None
         if app_settings.get('deepl_api_key'):
-            try:
-                self.translator = deepl.Translator(app_settings['deepl_api_key'])
-            except Exception as e:
-                wx.MessageBox(f"Could not initialize DeepL translator. Please check your API key.\n\nError: {e}", "DeepL Error", wx.OK | wx.ICON_ERROR)
-        self.last_search_term, self.last_best_translation = None, None
-        main_sizer, lang_sizer = wx.BoxSizer(wx.VERTICAL), wx.BoxSizer(wx.HORIZONTAL)
-        
-        self.english_lang_map = {get_translated_lang_name(name): name for name in deepl_lang_codes.keys()}
-        deepl_langs_sorted = sorted(list(self.english_lang_map.keys()))
-        
-        self.target_lang_choice = wx.Choice(self, choices=deepl_langs_sorted)
-        # Try to set the choice, but have a fallback
+            try: self.translator = deepl.Translator(app_settings['deepl_api_key'])
+            except Exception as e: wx.MessageBox(f"Could not initialize DeepL translator. Please check your API key.\n\nError: {e}", "DeepL Error", wx.OK | wx.ICON_ERROR)
+        self.last_search_term, self.last_best_translation = None, None; main_sizer, lang_sizer = wx.BoxSizer(wx.VERTICAL), wx.BoxSizer(wx.HORIZONTAL); self.english_lang_map = {get_translated_lang_name(name): name for name in deepl_lang_codes.keys()}; deepl_langs_sorted = sorted(list(self.english_lang_map.keys())); self.target_lang_choice = wx.Choice(self, choices=deepl_langs_sorted)
         try: self.target_lang_choice.SetStringSelection(get_translated_lang_name(app_settings['learning_language']))
         except: self.target_lang_choice.SetSelection(0)
-        
-        lang_sizer.Add(wx.StaticText(self, label=_("Translate To:")), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
-        lang_sizer.Add(self.target_lang_choice, 1, wx.EXPAND)
-        
-        search_box = wx.StaticBox(self, label=_("&Word to Translate (Source language is auto-detected)"))
-        search_sizer = wx.StaticBoxSizer(search_box, wx.HORIZONTAL)
-        self.search_input, self.search_button = wx.TextCtrl(self, style=wx.TE_PROCESS_ENTER), wx.Button(self, label=_("Translate"))
-        search_sizer.Add(self.search_input, 1, wx.EXPAND | wx.RIGHT, 5)
-        search_sizer.Add(self.search_button, 0)
-        self.Bind(wx.EVT_BUTTON, self.on_search, self.search_button)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_search, self.search_input)
-        
-        self.results_text = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2)
-        self.results_text.SetFont(wx.Font(11, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
-        
-        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.add_to_db_button, self.speak_button, self.close_button = wx.Button(self, label=_("Add to Database...")), wx.Button(self, label=_("Speak Translation")), wx.Button(self, label=_("Close"))
-        button_sizer.Add(self.add_to_db_button)
-        button_sizer.Add(self.speak_button, 0, wx.LEFT, 10)
-        button_sizer.AddStretchSpacer()
-        button_sizer.Add(self.close_button)
-        
-        self.add_to_db_button.Disable(), self.speak_button.Disable()
-        self.Bind(wx.EVT_BUTTON, self.on_add_to_db, self.add_to_db_button)
-        self.Bind(wx.EVT_BUTTON, self.on_speak, self.speak_button)
-        self.Bind(wx.EVT_BUTTON, lambda e: self.GetParent().show_database_panel(), self.close_button)
-        
-        main_sizer.Add(lang_sizer, 0, wx.EXPAND | wx.ALL, 10)
-        main_sizer.Add(search_sizer, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
-        main_sizer.Add(self.results_text, 1, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
-        main_sizer.Add(button_sizer, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
-        self.SetSizer(main_sizer)
-        self.search_input.SetFocus() # ACCESSIBILITY FIX
-
-        if not self.translator:
-            self.search_input.Disable()
-            self.search_button.Disable()
-            self.results_text.SetValue(_("DeepL requires an API key. Please add it in the Settings menu."))
-
+        lang_sizer.Add(wx.StaticText(self, label=_("Translate To:")), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5), lang_sizer.Add(self.target_lang_choice, 1, wx.EXPAND); search_box = wx.StaticBox(self, label=_("&Word to Translate (Source language is auto-detected)")); search_sizer = wx.StaticBoxSizer(search_box, wx.HORIZONTAL); self.search_input, self.search_button = wx.TextCtrl(self, style=wx.TE_PROCESS_ENTER), wx.Button(self, label=_("Translate")); search_sizer.Add(self.search_input, 1, wx.EXPAND | wx.RIGHT, 5), search_sizer.Add(self.search_button, 0); self.Bind(wx.EVT_BUTTON, self.on_search, self.search_button), self.Bind(wx.EVT_TEXT_ENTER, self.on_search, self.search_input); self.results_text = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2); self.results_text.SetFont(wx.Font(11, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)); button_sizer = wx.BoxSizer(wx.HORIZONTAL); self.add_to_db_button, self.speak_button, self.close_button = wx.Button(self, label=_("Add to Database...")), wx.Button(self, label=_("Speak Translation")), wx.Button(self, label=_("Close")); button_sizer.Add(self.add_to_db_button), button_sizer.Add(self.speak_button, 0, wx.LEFT, 10), button_sizer.AddStretchSpacer(), button_sizer.Add(self.close_button); self.add_to_db_button.Disable(), self.speak_button.Disable(); self.Bind(wx.EVT_BUTTON, self.on_add_to_db, self.add_to_db_button), self.Bind(wx.EVT_BUTTON, self.on_speak, self.speak_button), self.Bind(wx.EVT_BUTTON, lambda e: self.GetParent().show_database_panel(), self.close_button); main_sizer.Add(lang_sizer, 0, wx.EXPAND | wx.ALL, 10), main_sizer.Add(search_sizer, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10), main_sizer.Add(self.results_text, 1, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10), main_sizer.Add(button_sizer, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10); self.SetSizer(main_sizer), self.search_input.SetFocus()
+        if not self.translator: self.search_input.Disable(), self.search_button.Disable(), self.results_text.SetValue(_("DeepL requires an API key. Please add it in the Settings menu."))
     def on_search(self, event):
         word = self.search_input.GetValue().strip()
         if not word or not self.translator: return
         target_name_t = self.target_lang_choice.GetStringSelection()
         target_name = self.english_lang_map[target_name_t]
-        self.search_button.Disable()
-        self.add_to_db_button.Disable()
-        self.speak_button.Disable()
+        self.search_button.Disable(), self.add_to_db_button.Disable(), self.speak_button.Disable()
         self.last_search_term, self.last_best_translation = None, None
-        self.results_text.SetValue(_("Translating '{word}' to {target}...").format(word=word, target=target_name_t))
-        self.GetParent().SetStatusText(_("Translating {word}...").format(word=word))
+        self.results_text.SetValue(_("Translating '{word}' to {target}...").format(word=word, target=target_name_t)), self.GetParent().SetStatusText(_("Translating {word}...").format(word=word))
         threading.Thread(target=self._get_deepl_translation, args=(word, target_name), daemon=True).start()
-
     def _get_deepl_translation(self, word, target_name):
         try:
             target_code = deepl_lang_codes.get(target_name)
-            if not target_code:
-                wx.CallAfter(self._update_results, _("Error: Language not supported by DeepL."))
-                return
-            # --- FIX: Remove source_lang to allow auto-detection ---
+            if not target_code: wx.CallAfter(self._update_results, _("Error: Language not supported by DeepL.")); return
             result = self.translator.translate_text(word, target_lang=target_code)
             wx.CallAfter(self._update_results, result.text, word, result.text)
-        except Exception as e:
-            wx.CallAfter(self._update_results, _("A critical error occurred:\n\n{type}: {error}").format(type=type(e).__name__, error=e))
-
+        except Exception as e: wx.CallAfter(self._update_results, _("A critical error occurred:\n\n{type}: {error}").format(type=type(e).__name__, error=e))
     def _update_results(self, text, original_word=None, best_translation=None):
-        self.results_text.SetValue(text)
-        self.search_button.Enable()
-        self.GetParent().SetStatusText(_("Translation complete."))
+        self.results_text.SetValue(text), self.search_button.Enable(), self.GetParent().SetStatusText(_("Translation complete."))
         if original_word and best_translation:
-            self.last_search_term = original_word
-            self.last_best_translation = best_translation
+            self.last_search_term, self.last_best_translation = original_word, best_translation
             self.add_to_db_button.Enable()
-            self.speak_button.Enable()
-
+            if self.english_lang_map[self.target_lang_choice.GetStringSelection()] in tts_supported_langs: self.speak_button.Enable()
     def on_add_to_db(self, event):
         if self.last_search_term and self.last_best_translation:
-            native = self.last_search_term
-            learned = self.last_best_translation
+            native, learned = self.last_search_term, self.last_best_translation
             self.GetParent().add_word_to_db(native=native, learned=learned)
-            
     def on_speak(self, event):
         target_lang = self.english_lang_map[self.target_lang_choice.GetStringSelection()]
-        lang_code = lang_codes.get(target_lang)
-        if self.last_best_translation and lang_code:
+        if self.last_best_translation and (lang_code := lang_codes.get(target_lang)):
             threading.Thread(target=tts_handler.speak, args=(self.last_best_translation, lang_code, app_settings['keep_tts_cache']), daemon=True).start()
 
 # --- Main Application Frame ---
@@ -643,38 +608,16 @@ class MainFrame(wx.Frame):
         ID_MENU_SETTINGS, ID_MENU_SETTINGS_EXPORT, ID_MENU_SETTINGS_IMPORT = wx.NewIdRef(), wx.NewIdRef(), wx.NewIdRef()
         learn_menu, database_menu, flashcards_menu, online_tools_menu, settings_menu, file_menu = wx.Menu(), wx.Menu(), wx.Menu(), wx.Menu(), wx.Menu(), wx.Menu()
         learn_menu.Append(ID_MENU_REVIEW, _("&Review Due Words"))
-        learn_menu.AppendSeparator()
-        learn_menu.Append(ID_MENU_QUIZ_TEST, _("&Practice Quiz (Random)"))
-        learn_menu.Append(ID_MENU_PRONUNCIATION, _("&Pronunciation Practice"))
-        database_menu.Append(ID_MENU_DB_CREATE, _("&Create New Dictionary..."))
-        database_menu.Append(ID_MENU_DB_EDIT, _("&View/Edit Dictionaries"))
-        flashcards_menu.Append(ID_MENU_FLASHCARDS, _("&Start Session"))
-        online_tools_menu.Append(ID_MENU_ONLINE_DICT, _("&Online Translator (MyMemory)"))
-        online_tools_menu.Append(ID_MENU_DEEPL, _("&DeepL Translator"))
-        settings_menu.Append(ID_MENU_SETTINGS, _("Change &Settings..."))
-        settings_menu.AppendSeparator()
-        settings_menu.Append(ID_MENU_SETTINGS_EXPORT, _("&Export Database..."))
-        settings_menu.Append(ID_MENU_SETTINGS_IMPORT, _("&Import Database..."))
+        learn_menu.AppendSeparator(), learn_menu.Append(ID_MENU_QUIZ_TEST, _("&Practice Quiz (Random)")), learn_menu.Append(ID_MENU_PRONUNCIATION, _("&Pronunciation Practice"))
+        database_menu.Append(ID_MENU_DB_CREATE, _("&Create New Dictionary...")), database_menu.Append(ID_MENU_DB_EDIT, _("&View/Edit Dictionaries"))
+        flashcards_menu.Append(ID_MENU_FLASHCARDS, _("&Start Session")), online_tools_menu.Append(ID_MENU_ONLINE_DICT, _("&Online Translator (MyMemory)")), online_tools_menu.Append(ID_MENU_DEEPL, _("&DeepL Translator"))
+        settings_menu.Append(ID_MENU_SETTINGS, _("Change &Settings...")), settings_menu.AppendSeparator(), settings_menu.Append(ID_MENU_SETTINGS_EXPORT, _("&Export Database...")), settings_menu.Append(ID_MENU_SETTINGS_IMPORT, _("&Import Database..."))
         exit_item = file_menu.Append(wx.ID_EXIT, _("&Exit"))
-        menu_bar.Append(learn_menu, _("&Learn"))
-        menu_bar.Append(database_menu, _("&Database"))
-        menu_bar.Append(flashcards_menu, _("F&lashcards"))
-        menu_bar.Append(online_tools_menu, _("Online &Tools"))
-        menu_bar.Append(settings_menu, "&Settings")
-        menu_bar.Append(file_menu, "&File")
+        menu_bar.Append(learn_menu, _("&Learn")), menu_bar.Append(database_menu, _("&Database")), menu_bar.Append(flashcards_menu, _("F&lashcards")), menu_bar.Append(online_tools_menu, _("Online &Tools")), menu_bar.Append(settings_menu, "&Settings"), menu_bar.Append(file_menu, "&File")
         self.SetMenuBar(menu_bar)
-        self.Bind(wx.EVT_MENU, lambda e: self.show_review_panel(), id=ID_MENU_REVIEW)
-        self.Bind(wx.EVT_MENU, lambda e: self.show_quiz_panel(), id=ID_MENU_QUIZ_TEST)
-        self.Bind(wx.EVT_MENU, lambda e: self.show_pronunciation_panel(), id=ID_MENU_PRONUNCIATION)
-        self.Bind(wx.EVT_MENU, self.on_db_create, id=ID_MENU_DB_CREATE)
-        self.Bind(wx.EVT_MENU, lambda e: self.show_database_panel(), id=ID_MENU_DB_EDIT)
-        self.Bind(wx.EVT_MENU, lambda e: self.show_flashcards_panel(), id=ID_MENU_FLASHCARDS)
-        self.Bind(wx.EVT_MENU, lambda e: self.show_online_dict_panel(), id=ID_MENU_ONLINE_DICT)
-        self.Bind(wx.EVT_MENU, lambda e: self.show_deepl_panel(), id=ID_MENU_DEEPL)
-        self.Bind(wx.EVT_MENU, self.on_settings, id=ID_MENU_SETTINGS)
-        self.Bind(wx.EVT_MENU, self.on_export, id=ID_MENU_SETTINGS_EXPORT)
-        self.Bind(wx.EVT_MENU, self.on_import, id=ID_MENU_SETTINGS_IMPORT)
-        self.Bind(wx.EVT_MENU, lambda e: self.Close(), exit_item)
+        self.Bind(wx.EVT_MENU, lambda e: self.show_review_panel(), id=ID_MENU_REVIEW), self.Bind(wx.EVT_MENU, lambda e: self.show_quiz_panel(), id=ID_MENU_QUIZ_TEST), self.Bind(wx.EVT_MENU, lambda e: self.show_pronunciation_panel(), id=ID_MENU_PRONUNCIATION)
+        self.Bind(wx.EVT_MENU, self.on_db_create, id=ID_MENU_DB_CREATE), self.Bind(wx.EVT_MENU, lambda e: self.show_database_panel(), id=ID_MENU_DB_EDIT), self.Bind(wx.EVT_MENU, lambda e: self.show_flashcards_panel(), id=ID_MENU_FLASHCARDS), self.Bind(wx.EVT_MENU, lambda e: self.show_online_dict_panel(), id=ID_MENU_ONLINE_DICT), self.Bind(wx.EVT_MENU, lambda e: self.show_deepl_panel(), id=ID_MENU_DEEPL)
+        self.Bind(wx.EVT_MENU, self.on_settings, id=ID_MENU_SETTINGS), self.Bind(wx.EVT_MENU, self.on_export, id=ID_MENU_SETTINGS_EXPORT), self.Bind(wx.EVT_MENU, self.on_import, id=ID_MENU_SETTINGS_IMPORT), self.Bind(wx.EVT_MENU, lambda e: self.Close(), exit_item)
     def add_word_to_db(self, word_id=None, native="", learned="", notes=""):
         title = _("Edit Word") if word_id else _("Add New Word")
         dictionaries = database.get_dictionaries()
