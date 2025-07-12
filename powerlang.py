@@ -25,16 +25,12 @@ def load_settings():
     global app_settings
     if os.path.exists('settings.json'):
         try:
-            with open('settings.json', 'r') as f:
-                app_settings.update(json.load(f))
-        except (IOError, json.JSONDecodeError):
-            save_settings()
-    else:
-        save_settings()
+            with open('settings.json', 'r') as f: app_settings.update(json.load(f))
+        except (IOError, json.JSONDecodeError): save_settings()
+    else: save_settings()
 
 def save_settings():
-    with open('settings.json', 'w') as f:
-        json.dump(app_settings, f, indent=4)
+    with open('settings.json', 'w') as f: json.dump(app_settings, f, indent=4)
 
 # --- Dialogs ---
 class LanguageSelectDialog(wx.Dialog):
@@ -49,17 +45,14 @@ class LanguageSelectDialog(wx.Dialog):
         main_sizer.Add(self.CreateStdDialogButtonSizer(wx.OK), 0, wx.ALIGN_CENTER|wx.ALL, 10)
         self.SetSizerAndFit(main_sizer)
         self.Center()
-    def get_lang_code(self):
-        return ["en", "ru", "hu"][self.lang_choice.GetSelection()]
+    def get_lang_code(self): return ["en", "ru", "hu"][self.lang_choice.GetSelection()]
 
 class WordDialog(wx.Dialog):
     def __init__(self, parent, title, native="", learned="", notes=""):
         super().__init__(parent, title=title, size=(400, 220))
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         grid_sizer = wx.FlexGridSizer(3, 2, 10, 10)
-        self.native_text = wx.TextCtrl(self, value=native)
-        self.learned_text = wx.TextCtrl(self, value=learned)
-        self.notes_text = wx.TextCtrl(self, value=notes)
+        self.native_text, self.learned_text, self.notes_text = wx.TextCtrl(self, value=native), wx.TextCtrl(self, value=learned), wx.TextCtrl(self, value=notes)
         grid_sizer.Add(wx.StaticText(self, label=_("&Native Word:")), 0, wx.ALIGN_CENTER_VERTICAL)
         grid_sizer.Add(self.native_text, 1, wx.EXPAND)
         grid_sizer.Add(wx.StaticText(self, label=_("&Learned Word:")), 0, wx.ALIGN_CENTER_VERTICAL)
@@ -72,8 +65,7 @@ class WordDialog(wx.Dialog):
         main_sizer.Add(button_sizer, 0, wx.ALIGN_CENTER | wx.BOTTOM, 10)
         self.SetSizer(main_sizer)
         self.Center()
-    def get_values(self):
-        return {"native": self.native_text.GetValue(), "learned": self.learned_text.GetValue(), "notes": self.notes_text.GetValue()}
+    def get_values(self): return {"native": self.native_text.GetValue(), "learned": self.learned_text.GetValue(), "notes": self.notes_text.GetValue()}
 
 class SettingsDialog(wx.Dialog):
     def __init__(self, parent):
@@ -141,83 +133,26 @@ class SettingsDialog(wx.Dialog):
 class DatabasePanel(wx.Panel):
     def __init__(self, parent):
         super().__init__(parent)
-        self.dictionaries, self.current_dict_id = {}, None
-        main_sizer, control_sizer = wx.BoxSizer(wx.VERTICAL), wx.BoxSizer(wx.HORIZONTAL)
-        self.dict_choice, self.delete_dict_button = wx.Choice(self), wx.Button(self, label=_("Delete This Dictionary"))
-        self.Bind(wx.EVT_CHOICE, self.on_dict_selected, self.dict_choice)
-        self.Bind(wx.EVT_BUTTON, self.on_delete_dictionary, self.delete_dict_button)
-        control_sizer.Add(wx.StaticText(self, label=_("Dictionary:")), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
-        control_sizer.Add(self.dict_choice, 1, wx.EXPAND | wx.RIGHT, 10)
-        control_sizer.Add(self.delete_dict_button, 0)
-        main_sizer.Add(control_sizer, 0, wx.EXPAND | wx.ALL, 10)
-        self.word_list = wx.ListCtrl(self, style=wx.LC_REPORT | wx.BORDER_SUNKEN)
-        self.word_list.InsertColumn(0, _("Native Word"), width=200)
-        self.word_list.InsertColumn(1, _("Learned Word"), width=200)
-        self.word_list.InsertColumn(2, _("Notes"), width=300)
-        self.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.on_word_deselected, self.word_list)
-        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_word_selected, self.word_list)
-        main_sizer.Add(self.word_list, 1, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
-        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.add_button, self.edit_button, self.delete_button = wx.Button(self, label=_("Add Word...")), wx.Button(self, label=_("Edit Word...")), wx.Button(self, label=_("Delete Word"))
-        self.speak_button = wx.Button(self, label=_("Speak Learned Word"))
-        self.edit_button.Disable()
-        self.delete_button.Disable()
-        self.speak_button.Disable()
-        self.Bind(wx.EVT_BUTTON, self.on_add_word, self.add_button)
-        self.Bind(wx.EVT_BUTTON, self.on_edit_word, self.edit_button)
-        self.Bind(wx.EVT_BUTTON, self.on_delete_word, self.delete_button)
-        self.Bind(wx.EVT_BUTTON, self.on_speak, self.speak_button)
-        button_sizer.Add(self.add_button)
-        button_sizer.Add(self.edit_button, 0, wx.LEFT, 5)
-        button_sizer.Add(self.delete_button, 0, wx.LEFT, 5)
-        button_sizer.AddStretchSpacer()
-        button_sizer.Add(self.speak_button, 0, wx.LEFT, 5)
-        main_sizer.Add(button_sizer, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
-        self.SetSizer(main_sizer)
-        self.populate_dictionaries()
-        self.dict_choice.SetFocus()
+        self.dictionaries, self.current_dict_id = {}, None; main_sizer, control_sizer = wx.BoxSizer(wx.VERTICAL), wx.BoxSizer(wx.HORIZONTAL); self.dict_choice, self.delete_dict_button = wx.Choice(self), wx.Button(self, label=_("Delete This Dictionary")); self.Bind(wx.EVT_CHOICE, self.on_dict_selected, self.dict_choice), self.Bind(wx.EVT_BUTTON, self.on_delete_dictionary, self.delete_dict_button); control_sizer.Add(wx.StaticText(self, label=_("Dictionary:")), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5), control_sizer.Add(self.dict_choice, 1, wx.EXPAND | wx.RIGHT, 10), control_sizer.Add(self.delete_dict_button, 0); main_sizer.Add(control_sizer, 0, wx.EXPAND | wx.ALL, 10); self.word_list = wx.ListCtrl(self, style=wx.LC_REPORT | wx.BORDER_SUNKEN); self.word_list.InsertColumn(0, _("Native Word"), width=200), self.word_list.InsertColumn(1, _("Learned Word"), width=200), self.word_list.InsertColumn(2, _("Notes"), width=300); self.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.on_word_deselected, self.word_list), self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_word_selected, self.word_list); main_sizer.Add(self.word_list, 1, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10); button_sizer = wx.BoxSizer(wx.HORIZONTAL); self.add_button, self.edit_button, self.delete_button = wx.Button(self, label=_("Add Word...")), wx.Button(self, label=_("Edit Word...")), wx.Button(self, label=_("Delete Word")); self.speak_button = wx.Button(self, label=_("Speak Learned Word")); self.edit_button.Disable(), self.delete_button.Disable(), self.speak_button.Disable(); self.Bind(wx.EVT_BUTTON, self.on_add_word, self.add_button), self.Bind(wx.EVT_BUTTON, self.on_edit_word, self.edit_button), self.Bind(wx.EVT_BUTTON, self.on_delete_word, self.delete_button), self.Bind(wx.EVT_BUTTON, self.on_speak, self.speak_button); button_sizer.Add(self.add_button), button_sizer.Add(self.edit_button, 0, wx.LEFT, 5), button_sizer.Add(self.delete_button, 0, wx.LEFT, 5), button_sizer.AddStretchSpacer(), button_sizer.Add(self.speak_button, 0, wx.LEFT, 5); main_sizer.Add(button_sizer, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10); self.SetSizer(main_sizer), self.populate_dictionaries(); self.dict_choice.SetFocus()
     def populate_dictionaries(self):
-        self.dict_choice.Clear()
-        self.word_list.DeleteAllItems()
-        self.edit_button.Disable()
-        self.delete_button.Disable()
-        self.speak_button.Disable()
-        db_dicts = database.get_dictionaries()
-        self.dictionaries = {name: id for id, name in db_dicts}
-        if db_dicts:
-            self.dict_choice.AppendItems([name for id, name in db_dicts])
-            self.dict_choice.SetSelection(0)
-            self.on_dict_selected(None)
-            self.delete_dict_button.Enable()
-        else:
-            self.current_dict_id = None
-            self.add_button.Disable()
-            self.delete_dict_button.Disable()
+        self.dict_choice.Clear(), self.word_list.DeleteAllItems(), self.edit_button.Disable(), self.delete_button.Disable(), self.speak_button.Disable(); db_dicts = database.get_dictionaries(); self.dictionaries = {name: id for id, name in db_dicts}
+        if db_dicts: self.dict_choice.AppendItems([name for id, name in db_dicts]), self.dict_choice.SetSelection(0), self.on_dict_selected(None), self.delete_dict_button.Enable()
+        else: self.current_dict_id, self.add_button.Disable(), self.delete_dict_button.Disable()
     def populate_words(self):
-        self.word_list.DeleteAllItems()
-        self.edit_button.Disable()
-        self.delete_button.Disable()
-        self.speak_button.Disable()
+        self.word_list.DeleteAllItems(), self.edit_button.Disable(), self.delete_button.Disable(), self.speak_button.Disable()
         if self.current_dict_id is not None:
             self.add_button.Enable()
             for word_id, native, learned, notes in database.get_words(self.current_dict_id):
                 index = self.word_list.InsertItem(self.word_list.GetItemCount(), native)
-                self.word_list.SetItem(index, 1, learned)
-                self.word_list.SetItem(index, 2, notes if notes else "")
-                self.word_list.SetItemData(index, word_id)
+                self.word_list.SetItem(index, 1, learned), self.word_list.SetItem(index, 2, notes if notes else ""), self.word_list.SetItemData(index, word_id)
     def on_dict_selected(self, event):
         selected_name = self.dict_choice.GetStringSelection()
-        if selected_name in self.dictionaries:
-            self.current_dict_id = self.dictionaries[selected_name]
-            self.populate_words()
+        if selected_name in self.dictionaries: self.current_dict_id = self.dictionaries[selected_name]; self.populate_words()
     def on_delete_dictionary(self, event):
         if not self.current_dict_id: return
         dict_name = self.dict_choice.GetStringSelection()
-        msg = _("Are you sure you want to permanently delete the entire dictionary '{name}' and all the words in it?").format(name=dict_name)
-        with wx.MessageDialog(self, msg, _("Confirm Delete Dictionary"), wx.YES_NO | wx.NO_DEFAULT | wx.ICON_WARNING) as dlg:
-            if dlg.ShowModal() == wx.ID_YES:
-                database.delete_dictionary(self.current_dict_id)
-                self.populate_dictionaries()
+        with wx.MessageDialog(self, _("Are you sure you want to permanently delete the entire dictionary '{name}' and all the words in it?").format(name=dict_name), _("Confirm Delete Dictionary"), wx.YES_NO | wx.NO_DEFAULT | wx.ICON_WARNING) as dlg:
+            if dlg.ShowModal() == wx.ID_YES: database.delete_dictionary(self.current_dict_id), self.populate_dictionaries()
     def on_word_selected(self, event):
         self.edit_button.Enable()
         self.delete_button.Enable()
@@ -225,81 +160,46 @@ class DatabasePanel(wx.Panel):
         if app_settings['learning_language'] in tts_supported_langs:
             self.speak_button.Enable()
     def on_word_deselected(self, event):
-        if self.word_list.GetSelectedItemCount() == 0:
-            self.edit_button.Disable()
-            self.delete_button.Disable()
-            self.speak_button.Disable()
-    def on_add_word(self, event):
-        self.GetParent().add_word_to_db()
+        if self.word_list.GetSelectedItemCount() == 0: self.edit_button.Disable(), self.delete_button.Disable(), self.speak_button.Disable()
+    def on_add_word(self, event): self.GetParent().add_word_to_db()
     def on_edit_word(self, event):
         if (idx := self.word_list.GetFirstSelected()) == -1: return
-        word_id = self.word_list.GetItemData(idx)
-        native = self.word_list.GetItemText(idx)
-        learned = self.word_list.GetItem(idx, 1).GetText()
-        notes = self.word_list.GetItem(idx, 2).GetText()
+        word_id, native, learned, notes = self.word_list.GetItemData(idx), self.word_list.GetItemText(idx), self.word_list.GetItem(idx, 1).GetText(), self.word_list.GetItem(idx, 2).GetText()
         self.GetParent().add_word_to_db(word_id=word_id, native=native, learned=learned, notes=notes)
     def on_delete_word(self, event):
         if (idx := self.word_list.GetFirstSelected()) == -1: return
-        word_id = self.word_list.GetItemData(idx)
-        native_word = self.word_list.GetItemText(idx)
+        word_id, native_word = self.word_list.GetItemData(idx), self.word_list.GetItemText(idx)
         with wx.MessageDialog(self, _("Are you sure you want to delete the word '{word}'?").format(word=native_word), _("Confirm Delete"), wx.YES_NO | wx.NO_DEFAULT | wx.ICON_WARNING) as dlg:
-            if dlg.ShowModal() == wx.ID_YES:
-                database.delete_word(word_id)
-                self.populate_words()
+            if dlg.ShowModal() == wx.ID_YES: database.delete_word(word_id), self.populate_words()
     def on_speak(self, event):
         if (idx := self.word_list.GetFirstSelected()) == -1: return
-        learned_word = self.word_list.GetItem(idx, 1).GetText()
-        lang_code = lang_codes.get(app_settings['learning_language'])
-        if learned_word and lang_code:
-            threading.Thread(target=tts_handler.speak, args=(learned_word, lang_code, app_settings['keep_tts_cache']), daemon=True).start()
+        learned_word, lang_code = self.word_list.GetItem(idx, 1).GetText(), lang_codes.get(app_settings['learning_language'])
+        if learned_word and lang_code: threading.Thread(target=tts_handler.speak, args=(learned_word, lang_code, app_settings['keep_tts_cache']), daemon=True).start()
 
-class ReviewPanel(wx.Panel):
+class ReviewPanel(wx.Panel): # ... (code is unchanged)
     def __init__(self, parent):
-        super().__init__(parent)
-        self.due_cards, self.current_card = [], None
-        main_sizer, review_box = wx.BoxSizer(wx.VERTICAL), wx.StaticBox(self, label=_("Review Due Words"))
-        sizer = wx.StaticBoxSizer(review_box, wx.VERTICAL)
-        self.card_count_text, self.question_text = wx.StaticText(self, label=""), wx.StaticText(self, label=_("Loading..."))
-        self.question_text.SetFont(wx.Font(36, wx.DEFAULT, wx.NORMAL, wx.BOLD))
-        self.show_answer_button = wx.Button(self, label=_("Show Answer"))
-        self.Bind(wx.EVT_BUTTON, self.on_show_answer, self.show_answer_button)
-        sizer.Add(self.card_count_text, 0, wx.ALL | wx.ALIGN_CENTER, 10)
-        sizer.Add(self.question_text, 1, wx.EXPAND | wx.ALL, 20)
-        sizer.Add(self.show_answer_button, 0, wx.EXPAND | wx.ALL, 10)
-        main_sizer.Add(sizer, 1, wx.EXPAND | wx.ALL, 20)
-        self.SetSizer(main_sizer)
-        self.start_review_session()
-        self.show_answer_button.SetFocus()
+        super().__init__(parent); self.due_cards, self.current_card = [], None; main_sizer, review_box = wx.BoxSizer(wx.VERTICAL), wx.StaticBox(self, label=_("Review Due Words")); sizer = wx.StaticBoxSizer(review_box, wx.VERTICAL); self.card_count_text, self.question_text = wx.StaticText(self, label=""), wx.StaticText(self, label=_("Loading...")); self.question_text.SetFont(wx.Font(36, wx.DEFAULT, wx.NORMAL, wx.BOLD)); self.show_answer_button = wx.Button(self, label=_("Show Answer")); self.Bind(wx.EVT_BUTTON, self.on_show_answer, self.show_answer_button); sizer.Add(self.card_count_text, 0, wx.ALL | wx.ALIGN_CENTER, 10), sizer.Add(self.question_text, 1, wx.EXPAND | wx.ALL, 20), sizer.Add(self.show_answer_button, 0, wx.EXPAND | wx.ALL, 10); main_sizer.Add(sizer, 1, wx.EXPAND | wx.ALL, 20), self.SetSizer(main_sizer), self.start_review_session(); self.show_answer_button.SetFocus()
     def start_review_session(self):
         self.due_cards = database.get_due_cards()
-        if not self.due_cards:
-            wx.MessageBox(_("No words are due for review today. Great job!"), _("Review Complete"), wx.OK | wx.ICON_INFORMATION)
-            wx.CallAfter(self.GetParent().show_database_panel)
-        else:
-            self.load_next_card()
+        if not self.due_cards: wx.MessageBox(_("No words are due for review today. Great job!"), _("Review Complete"), wx.OK | wx.ICON_INFORMATION), wx.CallAfter(self.GetParent().show_database_panel)
+        else: self.load_next_card()
     def load_next_card(self):
-        if not self.due_cards:
-            wx.MessageBox(_("All words for this session have been reviewed!"), _("Review Complete"), wx.OK | wx.ICON_INFORMATION)
-            wx.CallAfter(self.GetParent().show_database_panel)
-            return
+        if not self.due_cards: wx.MessageBox(_("All words for this session have been reviewed!"), _("Review Complete"), wx.OK | wx.ICON_INFORMATION), wx.CallAfter(self.GetParent().show_database_panel); return
         self.current_card = self.due_cards.pop(0)
         native = self.current_card[1]
         self.question_text.SetLabel(native)
         self.card_count_text.SetLabel(_("{count} words remaining.").format(count=len(self.due_cards) + 1))
         self.Layout()
-        if app_settings['native_language'] in tts_supported_langs and (lang_code := lang_codes.get(app_settings['native_language'])):
-            threading.Thread(target=tts_handler.speak, args=(native, lang_code, app_settings['keep_tts_cache']), daemon=True).start()
+        if app_settings['native_language'] in tts_supported_langs and (lang_code := lang_codes.get(app_settings['native_language'])): threading.Thread(target=tts_handler.speak, args=(native, lang_code, app_settings['keep_tts_cache']), daemon=True).start()
     def on_show_answer(self, event):
         word_id, native, learned, easiness, interval, _ = self.current_card
         wx.MessageBox(_("The answer is:\n\n{answer}").format(answer=learned), _("Answer"), wx.OK | wx.ICON_INFORMATION)
-        if app_settings['learning_language'] in tts_supported_langs and (lang_code := lang_codes.get(app_settings['learning_language'])):
-            threading.Thread(target=tts_handler.speak, args=(learned, lang_code, app_settings['keep_tts_cache']), daemon=True).start()
+        if app_settings['learning_language'] in tts_supported_langs and (lang_code := lang_codes.get(app_settings['learning_language'])): threading.Thread(target=tts_handler.speak, args=(learned, lang_code, app_settings['keep_tts_cache']), daemon=True).start()
         choices = [_("Forgot (review in 1 day)"), _("Hard"), _("Good"), _("Easy")]
         with wx.SingleChoiceDialog(self, _("How well did you know it?"), _("Grade Yourself"), choices) as grade_dlg:
             if grade_dlg.ShowModal() == wx.ID_OK:
                 quality = [0, 3, 4, 5][grade_dlg.GetSelection()]
-                if quality < 3:
-                    interval = 1
+                if quality < 3: interval = 1
                 else:
                     easiness = max(1.3, easiness + 0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02))
                     if quality == 3: interval = round(interval * 1.2)
@@ -309,82 +209,36 @@ class ReviewPanel(wx.Panel):
                 database.update_word_srs(word_id, easiness, interval, date.today() + timedelta(days=interval))
         self.load_next_card()
 
-class QuizPanel(wx.Panel):
+class QuizPanel(wx.Panel): # ... (code is unchanged)
     def __init__(self, parent):
-        super().__init__(parent)
-        self.session_words, self.incorrect_words, self.state, self.current_q_num = [], [], 'quiz', 0
-        self.current_question, self.current_answer = None, None
-        main_sizer, self.quiz_box = wx.BoxSizer(wx.VERTICAL), wx.StaticBox(self, label=_("Quiz"))
-        quiz_sizer = wx.StaticBoxSizer(self.quiz_box, wx.VERTICAL)
-        question_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.question_text = wx.StaticText(self, label="", style=wx.ALIGN_CENTER)
-        self.question_text.SetFont(wx.Font(24, wx.DEFAULT, wx.NORMAL, wx.BOLD))
-        self.speak_button = wx.Button(self, label=_("Speak"))
-        question_sizer.Add(self.question_text, 1, wx.ALIGN_CENTER_VERTICAL)
-        question_sizer.Add(self.speak_button, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 10)
-        self.answer_input = wx.TextCtrl(self, style=wx.TE_PROCESS_ENTER)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_check_answer, self.answer_input)
-        self.check_button, self.close_button = wx.Button(self, label=_("Check Answer")), wx.Button(self, label=_("End Quiz Early"))
-        self.Bind(wx.EVT_BUTTON, self.on_check_answer, self.check_button)
-        self.Bind(wx.EVT_BUTTON, self.on_speak, self.speak_button)
-        self.Bind(wx.EVT_BUTTON, lambda e: self.GetParent().show_database_panel(), self.close_button)
-        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        button_sizer.Add(self.check_button, 0, wx.RIGHT, 5)
-        button_sizer.Add(self.close_button, 0, wx.LEFT, 5)
-        quiz_sizer.Add(wx.StaticText(self, label=_("Translate the following:")), 0, wx.ALL, 10)
-        quiz_sizer.Add(question_sizer, 0, wx.EXPAND | wx.ALL, 10)
-        quiz_sizer.Add(self.answer_input, 0, wx.EXPAND | wx.ALL, 10)
-        quiz_sizer.Add(button_sizer, 0, wx.CENTER | wx.ALL, 10)
-        main_sizer.Add(quiz_sizer, 0, wx.EXPAND | wx.ALL, 20)
-        self.SetSizerAndFit(main_sizer)
-        self.start_session()
-        self.answer_input.SetFocus()
+        super().__init__(parent); self.session_words, self.incorrect_words, self.state, self.current_q_num = [], [], 'quiz', 0; self.current_question, self.current_answer = None, None; main_sizer, self.quiz_box = wx.BoxSizer(wx.VERTICAL), wx.StaticBox(self, label=_("Quiz")); quiz_sizer = wx.StaticBoxSizer(self.quiz_box, wx.VERTICAL); question_sizer = wx.BoxSizer(wx.HORIZONTAL); self.question_text = wx.StaticText(self, label="", style=wx.ALIGN_CENTER); self.question_text.SetFont(wx.Font(24, wx.DEFAULT, wx.NORMAL, wx.BOLD)); self.speak_button = wx.Button(self, label=_("Speak")); question_sizer.Add(self.question_text, 1, wx.ALIGN_CENTER_VERTICAL), question_sizer.Add(self.speak_button, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 10); self.answer_input = wx.TextCtrl(self, style=wx.TE_PROCESS_ENTER); self.Bind(wx.EVT_TEXT_ENTER, self.on_check_answer, self.answer_input); self.check_button, self.close_button = wx.Button(self, label=_("Check Answer")), wx.Button(self, label=_("End Quiz Early")); self.Bind(wx.EVT_BUTTON, self.on_check_answer, self.check_button), self.Bind(wx.EVT_BUTTON, self.on_speak, self.speak_button), self.Bind(wx.EVT_BUTTON, lambda e: self.GetParent().show_database_panel(), self.close_button); button_sizer = wx.BoxSizer(wx.HORIZONTAL); button_sizer.Add(self.check_button, 0, wx.RIGHT, 5), button_sizer.Add(self.close_button, 0, wx.LEFT, 5); quiz_sizer.Add(wx.StaticText(self, label=_("Translate the following:")), 0, wx.ALL, 10), quiz_sizer.Add(question_sizer, 0, wx.EXPAND | wx.ALL, 10), quiz_sizer.Add(self.answer_input, 0, wx.EXPAND | wx.ALL, 10), quiz_sizer.Add(button_sizer, 0, wx.CENTER | wx.ALL, 10); main_sizer.Add(quiz_sizer, 0, wx.EXPAND | wx.ALL, 20), self.SetSizerAndFit(main_sizer), self.start_session(); self.answer_input.SetFocus()
     def start_session(self):
         self.session_words = database.get_random_words(20)
-        if not self.session_words:
-            wx.MessageBox(_("Not enough words in database for a quiz."), _("Quiz Empty"), wx.OK | wx.ICON_INFORMATION)
-            wx.CallAfter(self.GetParent().show_database_panel)
-            return
+        if not self.session_words: wx.MessageBox(_("Not enough words in database for a quiz."), _("Quiz Empty"), wx.OK | wx.ICON_INFORMATION), wx.CallAfter(self.GetParent().show_database_panel); return
         self.load_next_word()
     def load_next_word(self):
         word_list = self.session_words if self.state == 'quiz' else self.incorrect_words
-        if self.current_q_num >= len(word_list):
-            self.end_phase()
-            return
+        if self.current_q_num >= len(word_list): self.end_phase(); return
         native, learned = word_list[self.current_q_num]
         self.question_is_native = random.choice([True,False])
-        self.current_question = native if self.question_is_native else learned
-        self.current_answer = learned if self.question_is_native else native
-        self.question_text.SetLabel(self.current_question)
-        self.answer_input.SetValue("")
-        self.answer_input.SetFocus()
-        self.GetParent().SetStatusText(_("Question {current} of {total}").format(current=self.current_q_num + 1, total=len(word_list)))
-        self.on_speak(None)
+        self.current_question, self.current_answer = (native, learned) if self.question_is_native else (learned, native)
+        self.question_text.SetLabel(self.current_question), self.answer_input.SetValue(""), self.answer_input.SetFocus()
+        self.GetParent().SetStatusText(_("Question {current} of {total}").format(current=self.current_q_num + 1, total=len(word_list))), self.on_speak(None)
     def on_check_answer(self, event):
-        user_answer = self.answer_input.GetValue().strip().lower()
-        correct_answer = self.current_answer.strip().lower()
-        if user_answer == correct_answer:
-            wx.MessageBox(_("Correct!"), _("Result"), wx.OK | wx.ICON_INFORMATION)
+        user_answer, correct_answer = self.answer_input.GetValue().strip().lower(), self.current_answer.strip().lower()
+        if user_answer == correct_answer: wx.MessageBox(_("Correct!"), _("Result"), wx.OK | wx.ICON_INFORMATION)
         else:
             wx.MessageBox(_("Incorrect.\nThe correct answer is: {answer}").format(answer=self.current_answer), _("Result"), wx.OK | wx.ICON_ERROR)
-            if self.state == 'quiz':
-                self.incorrect_words.append(self.session_words[self.current_q_num])
+            if self.state == 'quiz': self.incorrect_words.append(self.session_words[self.current_q_num])
         self.current_q_num += 1
         self.load_next_word()
     def end_phase(self):
         if self.state == 'quiz':
-            if not self.incorrect_words:
-                wx.MessageBox(_("Quiz complete! You got all 20 words correct!"), _("Perfect!"), wx.OK | wx.ICON_INFORMATION)
-                wx.CallAfter(self.GetParent().show_database_panel)
-                return
+            if not self.incorrect_words: wx.MessageBox(_("Quiz complete! You got all 20 words correct!"), _("Perfect!"), wx.OK | wx.ICON_INFORMATION), wx.CallAfter(self.GetParent().show_database_panel); return
             wx.MessageBox(_("Initial quiz complete. Now let's retry the {count} words you missed.").format(count=len(self.incorrect_words)), _("Retry Phase"), wx.OK | wx.ICON_INFORMATION)
-            self.state = 'retry'
-            self.current_q_num = 0
-            self.quiz_box.SetLabel(_("Quiz - Retrying Incorrect Words"))
-            self.load_next_word()
-        else:
-            wx.MessageBox(_("Retry phase complete! Well done."), _("Quiz Finished"), wx.OK | wx.ICON_INFORMATION)
-            wx.CallAfter(self.GetParent().show_database_panel)
+            self.state, self.current_q_num = 'retry', 0
+            self.quiz_box.SetLabel(_("Quiz - Retrying Incorrect Words")), self.load_next_word()
+        else: wx.MessageBox(_("Retry phase complete! Well done."), _("Quiz Finished"), wx.OK | wx.ICON_INFORMATION), wx.CallAfter(self.GetParent().show_database_panel)
     def on_speak(self, event):
         lang_to_speak = app_settings['native_language'] if self.question_is_native else app_settings['learning_language']
         if self.current_question and lang_to_speak in tts_supported_langs:
@@ -393,41 +247,18 @@ class QuizPanel(wx.Panel):
 
 class FlashcardPanel(wx.Panel):
     def __init__(self, parent):
-        super().__init__(parent)
-        self.session_words, self.current_answer, self.current_index = [], "", 0
-        main_sizer, fc_box = wx.BoxSizer(wx.VERTICAL), wx.StaticBox(self, label=_("Flashcards"))
-        sizer = wx.StaticBoxSizer(fc_box, wx.VERTICAL)
-        self.card_count_text, self.word_text = wx.StaticText(self, label=""), wx.StaticText(self, label="", style=wx.ALIGN_CENTER)
-        self.word_text.SetFont(wx.Font(36, wx.DEFAULT, wx.NORMAL, wx.BOLD))
-        self.show_answer_button, self.close_button = wx.Button(self, label=_("Show Answer")), wx.Button(self, label=_("End Session"))
-        self.Bind(wx.EVT_BUTTON, self.on_show_answer, self.show_answer_button)
-        self.Bind(wx.EVT_BUTTON, lambda e: self.GetParent().show_database_panel(), self.close_button)
-        sizer.Add(self.card_count_text, 0, wx.ALL | wx.ALIGN_CENTER, 10)
-        sizer.Add(self.word_text, 1, wx.EXPAND | wx.ALL, 20)
-        sizer.Add(self.show_answer_button, 0, wx.EXPAND | wx.ALL, 10)
-        sizer.Add(self.close_button, 0, wx.ALIGN_CENTER | wx.TOP, 10)
-        main_sizer.Add(sizer, 1, wx.EXPAND | wx.ALL, 20)
-        self.SetSizer(main_sizer)
-        self.start_session()
-        self.show_answer_button.SetFocus()
+        super().__init__(parent); self.session_words, self.current_answer, self.current_index = [], "", 0; main_sizer, fc_box = wx.BoxSizer(wx.VERTICAL), wx.StaticBox(self, label=_("Flashcards")); sizer = wx.StaticBoxSizer(fc_box, wx.VERTICAL); self.card_count_text, self.word_text = wx.StaticText(self, label=""), wx.StaticText(self, label="", style=wx.ALIGN_CENTER); self.word_text.SetFont(wx.Font(36, wx.DEFAULT, wx.NORMAL, wx.BOLD)); self.show_answer_button, self.close_button = wx.Button(self, label=_("Show Answer")), wx.Button(self, label=_("End Session")); self.Bind(wx.EVT_BUTTON, self.on_show_answer, self.show_answer_button), self.Bind(wx.EVT_BUTTON, lambda e: self.GetParent().show_database_panel(), self.close_button); sizer.Add(self.card_count_text, 0, wx.ALL | wx.ALIGN_CENTER, 10), sizer.Add(self.word_text, 1, wx.EXPAND | wx.ALL, 20), sizer.Add(self.show_answer_button, 0, wx.EXPAND | wx.ALL, 10), sizer.Add(self.close_button, 0, wx.ALIGN_CENTER | wx.TOP, 10); main_sizer.Add(sizer, 1, wx.EXPAND | wx.ALL, 20), self.SetSizer(main_sizer), self.start_session(); self.show_answer_button.SetFocus()
     def start_session(self):
         self.session_words = database.get_random_words(15)
-        if not self.session_words:
-            wx.MessageBox(_("No words in database for flashcards."), _("Empty"), wx.OK | wx.ICON_INFORMATION)
-            wx.CallAfter(self.GetParent().show_database_panel)
-            return
+        if not self.session_words: wx.MessageBox(_("No words in database for flashcards."), _("Empty"), wx.OK | wx.ICON_INFORMATION), wx.CallAfter(self.GetParent().show_database_panel); return
         self.current_index = -1
         self.load_next_card()
     def load_next_card(self):
         self.current_index += 1
-        if self.current_index >= len(self.session_words):
-            wx.MessageBox(_("Flashcard session complete!"), _("Finished"), wx.OK | wx.ICON_INFORMATION)
-            wx.CallAfter(self.GetParent().show_database_panel)
-            return
+        if self.current_index >= len(self.session_words): wx.MessageBox(_("Flashcard session complete!"), _("Finished"), wx.OK | wx.ICON_INFORMATION), wx.CallAfter(self.GetParent().show_database_panel); return
         native, learned = self.session_words[self.current_index]
         is_native_question = random.choice([True,False])
-        question = native if is_native_question else learned
-        answer = learned if is_native_question else native
+        question, answer = (native, learned) if is_native_question else (learned, native)
         lang_to_speak = app_settings['native_language'] if is_native_question else app_settings['learning_language']
         self.word_text.SetLabel(question)
         self.current_answer = answer
@@ -436,49 +267,11 @@ class FlashcardPanel(wx.Panel):
         if question and lang_to_speak in tts_supported_langs:
             lang_code = lang_codes.get(lang_to_speak)
             threading.Thread(target=tts_handler.speak, args=(question, lang_code, app_settings['keep_tts_cache']), daemon=True).start()
-    def on_show_answer(self, event):
-        wx.MessageBox(_("The answer is:\n\n{answer}").format(answer=self.current_answer), _("Answer"), wx.OK | wx.ICON_INFORMATION)
-        self.load_next_card()
+    def on_show_answer(self, event): wx.MessageBox(_("The answer is:\n\n{answer}").format(answer=self.current_answer), _("Answer"), wx.OK | wx.ICON_INFORMATION), self.load_next_card()
 
 class OnlineDictPanel(wx.Panel):
     def __init__(self, parent):
-        super().__init__(parent)
-        self.last_search_term, self.last_best_translation = None, None
-        main_sizer, lang_sizer = wx.BoxSizer(wx.VERTICAL), wx.BoxSizer(wx.HORIZONTAL)
-        self.english_lang_map = {get_translated_lang_name(name): name for name in lang_codes.keys()}
-        all_langs_sorted = sorted(list(self.english_lang_map.keys()))
-        self.source_lang_choice, self.target_lang_choice = wx.Choice(self, choices=all_langs_sorted), wx.Choice(self, choices=all_langs_sorted)
-        self.source_lang_choice.SetStringSelection(get_translated_lang_name(app_settings['native_language']))
-        self.target_lang_choice.SetStringSelection(get_translated_lang_name(app_settings['learning_language']))
-        lang_sizer.Add(wx.StaticText(self, label=_("From:")), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
-        lang_sizer.Add(self.source_lang_choice, 1, wx.EXPAND | wx.RIGHT, 10)
-        lang_sizer.Add(wx.StaticText(self, label=_("To:")), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
-        lang_sizer.Add(self.target_lang_choice, 1, wx.EXPAND)
-        search_box = wx.StaticBox(self, label=_("&Word to Translate"))
-        search_sizer = wx.StaticBoxSizer(search_box, wx.HORIZONTAL)
-        self.search_input, self.search_button = wx.TextCtrl(self, style=wx.TE_PROCESS_ENTER), wx.Button(self, label=_("Translate"))
-        search_sizer.Add(self.search_input, 1, wx.EXPAND | wx.RIGHT, 5)
-        search_sizer.Add(self.search_button, 0)
-        self.Bind(wx.EVT_BUTTON, self.on_search, self.search_button)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_search, self.search_input)
-        self.results_text = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2)
-        self.results_text.SetFont(wx.Font(11, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
-        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.add_to_db_button, self.speak_button, self.close_button = wx.Button(self, label=_("Add to Database...")), wx.Button(self, label=_("Speak Translation")), wx.Button(self, label=_("Close"))
-        button_sizer.Add(self.add_to_db_button)
-        button_sizer.Add(self.speak_button, 0, wx.LEFT, 10)
-        button_sizer.AddStretchSpacer()
-        button_sizer.Add(self.close_button)
-        self.add_to_db_button.Disable(), self.speak_button.Disable()
-        self.Bind(wx.EVT_BUTTON, self.on_add_to_db, self.add_to_db_button)
-        self.Bind(wx.EVT_BUTTON, self.on_speak, self.speak_button)
-        self.Bind(wx.EVT_BUTTON, lambda e: self.GetParent().show_database_panel(), self.close_button)
-        main_sizer.Add(lang_sizer, 0, wx.EXPAND | wx.ALL, 10)
-        main_sizer.Add(search_sizer, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
-        main_sizer.Add(self.results_text, 1, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
-        main_sizer.Add(button_sizer, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
-        self.SetSizer(main_sizer)
-        self.search_input.SetFocus()
+        super().__init__(parent); self.last_search_term, self.last_best_translation = None, None; main_sizer, lang_sizer = wx.BoxSizer(wx.VERTICAL), wx.BoxSizer(wx.HORIZONTAL); self.english_lang_map = {get_translated_lang_name(name): name for name in lang_codes.keys()}; all_langs_sorted = sorted(list(self.english_lang_map.keys())); self.source_lang_choice, self.target_lang_choice = wx.Choice(self, choices=all_langs_sorted), wx.Choice(self, choices=all_langs_sorted); self.source_lang_choice.SetStringSelection(get_translated_lang_name(app_settings['native_language'])), self.target_lang_choice.SetStringSelection(get_translated_lang_name(app_settings['learning_language'])); lang_sizer.Add(wx.StaticText(self, label=_("From:")), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5), lang_sizer.Add(self.source_lang_choice, 1, wx.EXPAND | wx.RIGHT, 10), lang_sizer.Add(wx.StaticText(self, label=_("To:")), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5), lang_sizer.Add(self.target_lang_choice, 1, wx.EXPAND); search_box = wx.StaticBox(self, label=_("&Word to Translate")); search_sizer = wx.StaticBoxSizer(search_box, wx.HORIZONTAL); self.search_input, self.search_button = wx.TextCtrl(self, style=wx.TE_PROCESS_ENTER), wx.Button(self, label=_("Translate")); search_sizer.Add(self.search_input, 1, wx.EXPAND | wx.RIGHT, 5), search_sizer.Add(self.search_button, 0); self.Bind(wx.EVT_BUTTON, self.on_search, self.search_button), self.Bind(wx.EVT_TEXT_ENTER, self.on_search, self.search_input); self.results_text = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2); self.results_text.SetFont(wx.Font(11, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)); button_sizer = wx.BoxSizer(wx.HORIZONTAL); self.add_to_db_button, self.speak_button, self.close_button = wx.Button(self, label=_("Add to Database...")), wx.Button(self, label=_("Speak Translation")), wx.Button(self, label=_("Close")); button_sizer.Add(self.add_to_db_button), button_sizer.Add(self.speak_button, 0, wx.LEFT, 10), button_sizer.AddStretchSpacer(), button_sizer.Add(self.close_button); self.add_to_db_button.Disable(), self.speak_button.Disable(); self.Bind(wx.EVT_BUTTON, self.on_add_to_db, self.add_to_db_button), self.Bind(wx.EVT_BUTTON, self.on_speak, self.speak_button), self.Bind(wx.EVT_BUTTON, lambda e: self.GetParent().show_database_panel(), self.close_button); main_sizer.Add(lang_sizer, 0, wx.EXPAND | wx.ALL, 10), main_sizer.Add(search_sizer, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10), main_sizer.Add(self.results_text, 1, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10), main_sizer.Add(button_sizer, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10); self.SetSizer(main_sizer), self.search_input.SetFocus()
     def on_search(self, event):
         word, source_name_t, target_name_t = self.search_input.GetValue().strip(), self.source_lang_choice.GetStringSelection(), self.target_lang_choice.GetStringSelection()
         source_name, target_name = self.english_lang_map[source_name_t], self.english_lang_map[target_name_t]
@@ -525,16 +318,12 @@ class OnlineDictPanel(wx.Panel):
 class PronunciationPanel(wx.Panel):
     def __init__(self, parent):
         super().__init__(parent); main_sizer = wx.BoxSizer(wx.VERTICAL); practice_box = wx.StaticBox(self, label=_("Practice Pronunciation in {lang}").format(lang=app_settings['learning_language'])); sizer = wx.StaticBoxSizer(practice_box, wx.VERTICAL); self.text_input = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_PROCESS_ENTER); self.text_input.SetHint(_("Type or paste any text here to practice...")); self.speak_button, self.close_button = wx.Button(self, label=_("Speak Text")), wx.Button(self, label=_("Close")); self.Bind(wx.EVT_BUTTON, self.on_speak, self.speak_button), self.Bind(wx.EVT_BUTTON, lambda e: self.GetParent().show_database_panel(), self.close_button); sizer.Add(self.text_input, 1, wx.EXPAND | wx.ALL, 10), sizer.Add(self.speak_button, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10), sizer.Add(self.close_button, 0, wx.ALIGN_CENTER | wx.BOTTOM, 10); main_sizer.Add(sizer, 1, wx.EXPAND | wx.ALL, 20), self.SetSizer(main_sizer), self.text_input.SetFocus()
+        if app_settings['learning_language'] not in tts_supported_langs: self.speak_button.Disable()
     def on_speak(self, event):
         text, lang_name = self.text_input.GetValue().strip(), app_settings['learning_language']
-        if text and lang_name:
-            if lang_name not in tts_supported_langs:
-                wx.MessageBox(_("Sorry, Text-to-Speech is not supported for this language."), "TTS Not Supported", wx.OK | wx.ICON_WARNING)
-                return
-            if lang_code := lang_codes.get(lang_name):
-                threading.Thread(target=tts_handler.speak, args=(text, lang_code, app_settings['keep_tts_cache']), daemon=True).start()
-        elif not text:
-            wx.MessageBox(_("Please enter some text to speak."), _("Input Required"), wx.OK | wx.ICON_INFORMATION)
+        lang_code = lang_codes.get(lang_name)
+        if text and lang_code: threading.Thread(target=tts_handler.speak, args=(text, lang_code, app_settings['keep_tts_cache']), daemon=True).start()
+        elif not text: wx.MessageBox(_("Please enter some text to speak."), _("Input Required"), wx.OK | wx.ICON_INFORMATION)
 
 class DeepLPanel(wx.Panel):
     def __init__(self, parent):
@@ -581,19 +370,11 @@ class DeepLPanel(wx.Panel):
 # --- Main Application Frame ---
 class MainFrame(wx.Frame):
     def __init__(self, parent):
-        super().__init__(parent=parent, title="Powerlang", size=(800, 600))
-        self.main_sizer, self.current_content, self.needs_restart = wx.BoxSizer(wx.VERTICAL), None, False
-        self.SetSizer(self.main_sizer)
-        self.create_menubar()
-        self.CreateStatusBar()
-        self.show_database_panel()
-        self.Center()
-        self.Show()
+        super().__init__(parent=parent, title="Powerlang", size=(800, 600)); self.main_sizer, self.current_content, self.needs_restart = wx.BoxSizer(wx.VERTICAL), None, False; self.SetSizer(self.main_sizer); self.create_menubar(); self.CreateStatusBar(); self.show_database_panel(); self.Center(); self.Show()
     def switch_panel(self, new_panel_class):
         if self.current_content: self.current_content.Destroy()
         self.current_content = new_panel_class(self)
-        self.main_sizer.Add(self.current_content, 1, wx.EXPAND)
-        self.Layout()
+        self.main_sizer.Add(self.current_content, 1, wx.EXPAND); self.Layout()
     def show_database_panel(self): self.switch_panel(DatabasePanel)
     def show_review_panel(self): self.switch_panel(ReviewPanel)
     def show_quiz_panel(self): self.switch_panel(QuizPanel)
@@ -602,25 +383,10 @@ class MainFrame(wx.Frame):
     def show_deepl_panel(self): self.switch_panel(DeepLPanel)
     def show_pronunciation_panel(self): self.switch_panel(PronunciationPanel)
     def create_menubar(self):
-        menu_bar = wx.MenuBar()
-        ID_MENU_REVIEW, ID_MENU_QUIZ_TEST, ID_MENU_PRONUNCIATION = wx.NewIdRef(), wx.NewIdRef(), wx.NewIdRef()
-        ID_MENU_DB_CREATE, ID_MENU_DB_EDIT, ID_MENU_FLASHCARDS, ID_MENU_ONLINE_DICT, ID_MENU_DEEPL = wx.NewIdRef(), wx.NewIdRef(), wx.NewIdRef(), wx.NewIdRef(), wx.NewIdRef()
-        ID_MENU_SETTINGS, ID_MENU_SETTINGS_EXPORT, ID_MENU_SETTINGS_IMPORT = wx.NewIdRef(), wx.NewIdRef(), wx.NewIdRef()
-        learn_menu, database_menu, flashcards_menu, online_tools_menu, settings_menu, file_menu = wx.Menu(), wx.Menu(), wx.Menu(), wx.Menu(), wx.Menu(), wx.Menu()
-        learn_menu.Append(ID_MENU_REVIEW, _("&Review Due Words"))
-        learn_menu.AppendSeparator(), learn_menu.Append(ID_MENU_QUIZ_TEST, _("&Practice Quiz (Random)")), learn_menu.Append(ID_MENU_PRONUNCIATION, _("&Pronunciation Practice"))
-        database_menu.Append(ID_MENU_DB_CREATE, _("&Create New Dictionary...")), database_menu.Append(ID_MENU_DB_EDIT, _("&View/Edit Dictionaries"))
-        flashcards_menu.Append(ID_MENU_FLASHCARDS, _("&Start Session")), online_tools_menu.Append(ID_MENU_ONLINE_DICT, _("&Online Translator (MyMemory)")), online_tools_menu.Append(ID_MENU_DEEPL, _("&DeepL Translator"))
-        settings_menu.Append(ID_MENU_SETTINGS, _("Change &Settings...")), settings_menu.AppendSeparator(), settings_menu.Append(ID_MENU_SETTINGS_EXPORT, _("&Export Database...")), settings_menu.Append(ID_MENU_SETTINGS_IMPORT, _("&Import Database..."))
-        exit_item = file_menu.Append(wx.ID_EXIT, _("&Exit"))
-        menu_bar.Append(learn_menu, _("&Learn")), menu_bar.Append(database_menu, _("&Database")), menu_bar.Append(flashcards_menu, _("F&lashcards")), menu_bar.Append(online_tools_menu, _("Online &Tools")), menu_bar.Append(settings_menu, "&Settings"), menu_bar.Append(file_menu, "&File")
-        self.SetMenuBar(menu_bar)
-        self.Bind(wx.EVT_MENU, lambda e: self.show_review_panel(), id=ID_MENU_REVIEW), self.Bind(wx.EVT_MENU, lambda e: self.show_quiz_panel(), id=ID_MENU_QUIZ_TEST), self.Bind(wx.EVT_MENU, lambda e: self.show_pronunciation_panel(), id=ID_MENU_PRONUNCIATION)
-        self.Bind(wx.EVT_MENU, self.on_db_create, id=ID_MENU_DB_CREATE), self.Bind(wx.EVT_MENU, lambda e: self.show_database_panel(), id=ID_MENU_DB_EDIT), self.Bind(wx.EVT_MENU, lambda e: self.show_flashcards_panel(), id=ID_MENU_FLASHCARDS), self.Bind(wx.EVT_MENU, lambda e: self.show_online_dict_panel(), id=ID_MENU_ONLINE_DICT), self.Bind(wx.EVT_MENU, lambda e: self.show_deepl_panel(), id=ID_MENU_DEEPL)
-        self.Bind(wx.EVT_MENU, self.on_settings, id=ID_MENU_SETTINGS), self.Bind(wx.EVT_MENU, self.on_export, id=ID_MENU_SETTINGS_EXPORT), self.Bind(wx.EVT_MENU, self.on_import, id=ID_MENU_SETTINGS_IMPORT), self.Bind(wx.EVT_MENU, lambda e: self.Close(), exit_item)
+        menu_bar = wx.MenuBar(); ID_MENU_REVIEW, ID_MENU_QUIZ_TEST, ID_MENU_PRONUNCIATION = wx.NewIdRef(), wx.NewIdRef(), wx.NewIdRef(); ID_MENU_DB_CREATE, ID_MENU_DB_EDIT, ID_MENU_FLASHCARDS, ID_MENU_ONLINE_DICT, ID_MENU_DEEPL = wx.NewIdRef(), wx.NewIdRef(), wx.NewIdRef(), wx.NewIdRef(), wx.NewIdRef(); ID_MENU_SETTINGS, ID_MENU_SETTINGS_EXPORT, ID_MENU_SETTINGS_IMPORT = wx.NewIdRef(), wx.NewIdRef(), wx.NewIdRef(); learn_menu, database_menu, flashcards_menu, online_tools_menu, settings_menu, file_menu = wx.Menu(), wx.Menu(), wx.Menu(), wx.Menu(), wx.Menu(), wx.Menu(); learn_menu.Append(ID_MENU_REVIEW, _("&Review Due Words")), learn_menu.AppendSeparator(), learn_menu.Append(ID_MENU_QUIZ_TEST, _("&Practice Quiz (Random)")), learn_menu.Append(ID_MENU_PRONUNCIATION, _("&Pronunciation Practice")); database_menu.Append(ID_MENU_DB_CREATE, _("&Create New Dictionary...")), database_menu.Append(ID_MENU_DB_EDIT, _("&View/Edit Dictionaries")); flashcards_menu.Append(ID_MENU_FLASHCARDS, _("&Start Session")), online_tools_menu.Append(ID_MENU_ONLINE_DICT, _("&Online Translator (MyMemory)")), online_tools_menu.Append(ID_MENU_DEEPL, _("&DeepL Translator")); settings_menu.Append(ID_MENU_SETTINGS, _("Change &Settings...")), settings_menu.AppendSeparator(), settings_menu.Append(ID_MENU_SETTINGS_EXPORT, _("&Export Database...")), settings_menu.Append(ID_MENU_SETTINGS_IMPORT, _("&Import Database...")); exit_item = file_menu.Append(wx.ID_EXIT, _("&Exit")); menu_bar.Append(learn_menu, _("&Learn")), menu_bar.Append(database_menu, _("&Database")), menu_bar.Append(flashcards_menu, _("F&lashcards")), menu_bar.Append(online_tools_menu, _("Online &Tools")), menu_bar.Append(settings_menu, "&Settings"), menu_bar.Append(file_menu, "&File"); self.SetMenuBar(menu_bar)
+        self.Bind(wx.EVT_MENU, lambda e: self.show_review_panel(), id=ID_MENU_REVIEW), self.Bind(wx.EVT_MENU, lambda e: self.show_quiz_panel(), id=ID_MENU_QUIZ_TEST), self.Bind(wx.EVT_MENU, lambda e: self.show_pronunciation_panel(), id=ID_MENU_PRONUNCIATION), self.Bind(wx.EVT_MENU, self.on_db_create, id=ID_MENU_DB_CREATE), self.Bind(wx.EVT_MENU, lambda e: self.show_database_panel(), id=ID_MENU_DB_EDIT), self.Bind(wx.EVT_MENU, lambda e: self.show_flashcards_panel(), id=ID_MENU_FLASHCARDS), self.Bind(wx.EVT_MENU, lambda e: self.show_online_dict_panel(), id=ID_MENU_ONLINE_DICT), self.Bind(wx.EVT_MENU, lambda e: self.show_deepl_panel(), id=ID_MENU_DEEPL), self.Bind(wx.EVT_MENU, self.on_settings, id=ID_MENU_SETTINGS), self.Bind(wx.EVT_MENU, self.on_export, id=ID_MENU_SETTINGS_EXPORT), self.Bind(wx.EVT_MENU, self.on_import, id=ID_MENU_SETTINGS_IMPORT), self.Bind(wx.EVT_MENU, lambda e: self.Close(), exit_item)
     def add_word_to_db(self, word_id=None, native="", learned="", notes=""):
-        title = _("Edit Word") if word_id else _("Add New Word")
-        dictionaries = database.get_dictionaries()
+        title = _("Edit Word") if word_id else _("Add New Word"); dictionaries = database.get_dictionaries()
         if not dictionaries: wx.MessageBox(_("You must create at least one dictionary before adding words."), _("No Dictionaries Found"), wx.OK | wx.ICON_ERROR); return
         with WordDialog(self, title, native, learned, notes) as dlg:
             if dlg.ShowModal() == wx.ID_OK:
