@@ -1,14 +1,12 @@
 name: Build and Release Powerlang
 
-# This workflow runs when a new tag starting with 'v' is pushed (e.g., v1.0.0, v1.1)
+# This workflow runs when a new tag starting with 'v' is pushed
 on:
   push:
     tags:
       - 'v*'
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This job builds the application
   build:
     # It runs on two different operating systems in parallel
     strategy:
@@ -26,10 +24,9 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.11' # Use a specific Python version
+        python-version: '3.11'
 
-    # Step 3: Install dependencies for Linux (Ubuntu)
-    # This is necessary because playsound and wxPython have system-level dependencies
+    # Step 3: Install Linux Dependencies (only runs on Ubuntu)
     - name: Install Linux Dependencies
       if: runner.os == 'Linux'
       run: |
@@ -47,67 +44,68 @@ jobs:
       run: |
         pyinstaller --name Powerlang --onefile --windowed --add-data "database.py:." --add-data "tts_handler.py:." --add-data "translations.py:." powerlang.py
 
-    # Step 6: Package the executable for release
-    - name: Package artifacts
-      shell: bash
-      run: |
-        # Change the extension for Windows
-        EXT=""
-        if [ "${{ runner.os }}" == "Windows" ]; then
-          EXT=".exe"
-        fi
-        # Create a directory to hold the artifact
-        mkdir release_package
-        # Move the built file into it
-        mv dist/Powerlang${EXT} release_package/
-        # Move the readme file into it
-        mv README.md release_package/
-        # Create the final zip/tar.gz file
-        if [ "${{ runner.os }}" == "Windows" ]; then
-          7z a -tzip Powerlang-Windows.zip ./release_package/*
-        else
-          tar -czvf Powerlang-Linux.tar.gz -C release_package .
-        fi
+    # --- Step 6: Package the artifacts (Corrected with separate steps) ---
     
-    # Step 7: Upload the packaged file so the 'release' job can access it
-    - name: Upload artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: packaged-app-${{ matrix.os }}
-        path: Powerlang-*.zip
-        if-no-files-found: error
-        
-    - name: Upload artifact (Linux)
-      uses: actions/upload-artifact@v3
-      with:
-        name: packaged-app-${{ matrix.os }}
-        path: Powerlang-*.tar.gz
-        if-no-files-found: error
+    - name: Package for Windows
+      if: runner.os == 'Windows'
+      shell: pwsh # Use PowerShell for better cross-platform compatibility in shell commands
+      run: |
+        mkdir release_package
+        mv dist/Powerlang.exe release_package/
+        mv README.md release_package/
+        Compress-Archive -Path ./release_package/* -DestinationPath ./Powerlang-Windows.zip
 
-  # This job creates the GitHub Release after the build job is successful
+    - name: Package for Linux
+      if: runner.os == 'Linux'
+      run: |
+        mkdir release_package
+        mv dist/Powerlang release_package/
+        mv README.md release_package/
+        tar -czvf Powerlang-Linux.tar.gz -C release_package .
+
+    # --- Step 7: Upload the artifacts (Corrected with separate steps) ---
+
+    - name: Upload Windows Artifact
+      if: runner.os == 'Windows'
+      uses: actions/upload-artifact@v3
+      with:
+        name: Powerlang-Windows
+        path: Powerlang-Windows.zip
+    
+    - name: Upload Linux Artifact
+      if: runner.os == 'Linux'
+      uses: actions/upload-artifact@v3
+      with:
+        name: Powerlang-Linux
+        path: Powerlang-Linux.tar.gz
+
+  # This job creates the GitHub Release after the build jobs are successful
   release:
-    # It depends on the 'build' job finishing successfully
     needs: build
     runs-on: ubuntu-latest
     
     steps:
-    # Step 1: Download all the packaged files from the build job
-    - name: Download all artifacts
+    # Step 1: Download all the packaged files from the build jobs
+    - name: Download Windows artifact
       uses: actions/download-artifact@v3
       with:
-        path: artifacts/
+        name: Powerlang-Windows
 
+    - name: Download Linux artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: Powerlang-Linux
+        
     # Step 2: Create the GitHub Release and upload the files
     - name: Create Release and Upload Assets
       uses: softprops/action-gh-release@v1
       with:
-        # Get the release notes from the tag message itself
-        body_path: README.md
-        # Use the tag name as the release name
+        # Use the tag name as the release name and generate release notes automatically
         name: Powerlang ${{ github.ref_name }}
+        generate_release_notes: true 
         # The files to upload
         files: |
-          artifacts/packaged-app-windows-latest/Powerlang-Windows.zip
-          artifacts/packaged-app-ubuntu-latest/Powerlang-Linux.tar.gz
+          Powerlang-Windows.zip
+          Powerlang-Linux.tar.gz
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
