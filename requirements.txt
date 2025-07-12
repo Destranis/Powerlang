@@ -1,0 +1,5 @@
+wxPython
+gTTS
+requests
+playsound==1.2.2
+deepl

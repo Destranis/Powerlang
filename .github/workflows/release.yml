@@ -1,0 +1,113 @@
+name: Build and Release Powerlang
+
+# This workflow runs when a new tag starting with 'v' is pushed (e.g., v1.0.0, v1.1)
+on:
+  push:
+    tags:
+      - 'v*'
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This job builds the application
+  build:
+    # It runs on two different operating systems in parallel
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    # Step 1: Check out the repository code
+    - name: Check out code
+      uses: actions/checkout@v3
+
+    # Step 2: Set up Python
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11' # Use a specific Python version
+
+    # Step 3: Install dependencies for Linux (Ubuntu)
+    # This is necessary because playsound and wxPython have system-level dependencies
+    - name: Install Linux Dependencies
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgtk-3-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev python3-gstreamer-1.0 gir1.2-gst-plugins-base-1.0 portaudio19-dev
+
+    # Step 4: Install Python libraries from requirements.txt
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    # Step 5: Run PyInstaller to build the executable
+    - name: Build executable with PyInstaller
+      run: |
+        pyinstaller --name Powerlang --onefile --windowed --add-data "database.py:." --add-data "tts_handler.py:." --add-data "translations.py:." powerlang.py
+
+    # Step 6: Package the executable for release
+    - name: Package artifacts
+      shell: bash
+      run: |
+        # Change the extension for Windows
+        EXT=""
+        if [ "${{ runner.os }}" == "Windows" ]; then
+          EXT=".exe"
+        fi
+        # Create a directory to hold the artifact
+        mkdir release_package
+        # Move the built file into it
+        mv dist/Powerlang${EXT} release_package/
+        # Move the readme file into it
+        mv README.md release_package/
+        # Create the final zip/tar.gz file
+        if [ "${{ runner.os }}" == "Windows" ]; then
+          7z a -tzip Powerlang-Windows.zip ./release_package/*
+        else
+          tar -czvf Powerlang-Linux.tar.gz -C release_package .
+        fi
+    
+    # Step 7: Upload the packaged file so the 'release' job can access it
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: packaged-app-${{ matrix.os }}
+        path: Powerlang-*.zip
+        if-no-files-found: error
+        
+    - name: Upload artifact (Linux)
+      uses: actions/upload-artifact@v3
+      with:
+        name: packaged-app-${{ matrix.os }}
+        path: Powerlang-*.tar.gz
+        if-no-files-found: error
+
+  # This job creates the GitHub Release after the build job is successful
+  release:
+    # It depends on the 'build' job finishing successfully
+    needs: build
+    runs-on: ubuntu-latest
+    
+    steps:
+    # Step 1: Download all the packaged files from the build job
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: artifacts/
+
+    # Step 2: Create the GitHub Release and upload the files
+    - name: Create Release and Upload Assets
+      uses: softprops/action-gh-release@v1
+      with:
+        # Get the release notes from the tag message itself
+        body_path: README.md
+        # Use the tag name as the release name
+        name: Powerlang ${{ github.ref_name }}
+        # The files to upload
+        files: |
+          artifacts/packaged-app-windows-latest/Powerlang-Windows.zip
+          artifacts/packaged-app-ubuntu-latest/Powerlang-Linux.tar.gz
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
