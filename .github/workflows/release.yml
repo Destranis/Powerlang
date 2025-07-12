@@ -1,0 +1,59 @@
+name: Build and Release Powerlang
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Linux Dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev portaudio19-dev
+          
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          
+      - name: Build with PyInstaller
+        run: pyinstaller --name Powerlang --onefile --windowed --add-data "database.py:." --add-data "tts_handler.py:." --add-data "translations.py;." powerlang.py
+        
+      - name: Prepare Release Artifacts
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            mv dist/Powerlang.exe Powerlang.exe
+            echo "ASSET_NAME=Powerlang-Windows.zip" >> $GITHUB_ENV
+            7z a Powerlang-Windows.zip ./Powerlang.exe
+            echo "ASSET_PATH=Powerlang-Windows.zip" >> $GITHUB_ENV
+          else
+            mv dist/Powerlang Powerlang
+            echo "ASSET_NAME=Powerlang-Linux.tar.gz" >> $GITHUB_ENV
+            tar -czvf Powerlang-Linux.tar.gz ./Powerlang
+            echo "ASSET_PATH=Powerlang-Linux.tar.gz" >> $GITHUB_ENV
+          fi
+
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ${{ env.ASSET_PATH }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
