@@ -1,0 +1,68 @@
+name: Create GitHub Release
+
+on:
+  # This workflow runs only after the Windows and Linux builds are successful
+  workflow_run:
+    workflows: ["Build Windows Release", "Build Linux Release"]
+    types:
+      - completed
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    # Only run if both build workflows succeeded
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Download Windows artifact
+        uses: actions/github-script@v6
+        with:
+          script: |
+            let all_artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               run_id: context.payload.workflow_run.id,
+            });
+            let match_artifact = all_artifacts.data.artifacts.filter((artifact) => {
+              return artifact.name == "windows-build"
+            })[0];
+            let download = await github.rest.actions.downloadArtifact({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               artifact_id: match_artifact.id,
+               archive_format: 'zip',
+            });
+            let fs = require('fs');
+            fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/Powerlang-Windows.zip`, Buffer.from(download.data));
+
+      - name: Download Linux artifact
+        uses: actions/github-script@v6
+        with:
+          script: |
+            let all_artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               run_id: context.payload.workflow_run.id,
+            });
+            let match_artifact = all_artifacts.data.artifacts.filter((artifact) => {
+              return artifact.name == "linux-build"
+            })[0];
+            let download = await github.rest.actions.downloadArtifact({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               artifact_id: match_artifact.id,
+               archive_format: 'zip',
+            });
+            let fs = require('fs');
+            fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/Powerlang-Linux.tar.gz`, Buffer.from(download.data));
+      
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.event.workflow_run.head_branch }}
+          name: Powerlang ${{ github.event.workflow_run.head_branch }}
+          generate_release_notes: true
+          files: |
+            Powerlang-Windows.zip
+            Powerlang-Linux.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,28 @@
+name: Build Windows Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Build with PyInstaller
+        run: pyinstaller --name Powerlang --onefile --windowed --add-data "database.py;." --add-data "tts_handler.py;." --add-data "translations.py;." powerlang.py
+      - name: Package artifact
+        shell: pwsh
+        run: Compress-Archive -Path ./dist/Powerlang.exe -DestinationPath ./Powerlang-Windows.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: Powerlang-Windows.zip
